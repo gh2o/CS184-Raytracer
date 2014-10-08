@@ -3,6 +3,7 @@
 #include <cstdio>
 #include <iostream>
 #include <fstream>
+#include <locale>
 #include <memory>
 #include <Eigen/Dense>
 
@@ -24,9 +25,25 @@ struct {
 } Material;
 
 class ParseException : public std::runtime_error {
+public:
+	ParseException(std::string msg) :
+		ParseException(msg, -1) {}
+	ParseException(std::string msg, int lineno) :
+		runtime_error(buildMessage(msg, lineno)) {}
+private:
+	std::string buildMessage(std::string msg, int lineno) {
+		if (lineno > 0) {
+			std::ostringstream s;
+			s << "line " << lineno << ": " << msg;
+			return s.str();
+		} else {
+			return msg;
+		}
+	}
 };
 
 class WriteException : public std::runtime_error {
+public:
 	using runtime_error::runtime_error;
 };
 
@@ -45,6 +62,52 @@ class RTParser {
 public:
 	RTParser(GlobalScene& scene) : scene_(scene) {}
 	void parseFile(std::string filename) {
+		std::ifstream stream(filename);
+		if (!stream)
+			throw ParseException("file not found: " + filename);
+		int lineno = 1;
+		for (std::string line; std::getline(stream, line); lineno++) {
+			std::istringstream ss(line);
+			std::string type = extractToken(ss, lineno);
+			if (type.empty()) // blank line
+				continue;
+			// TODO
+			abort();
+		}
+	}
+	std::string extractToken(std::istream& stream, int lineno) {
+		// skip beginning spaces
+		int c;
+		while (true) {
+			c = stream.peek();
+			if (c == EOF)
+				return std::string();
+			if (!std::isspace(c))
+				break;
+			stream.get();
+		}
+		// read string value
+		std::ostringstream s;
+		if (stream.peek() == '"') {
+			stream.get();
+			while (true) {
+				c = stream.get();
+				if (c == EOF)
+					throw ParseException(std::string("unclosed quotes", lineno));
+				if (c == '"')
+					break;
+				s.put(c);
+			}
+		} else {
+			while (true) {
+				c = stream.get();
+				if (c == EOF || std::isspace(c))
+					break;
+				s.put(c);
+			}
+		}
+		// return it
+		return s.str();
 	}
 private:
 	GlobalScene& scene_;
