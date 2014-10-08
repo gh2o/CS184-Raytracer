@@ -54,15 +54,15 @@ public:
 
 class Light : public Transformable {
 public:
-	Color3d lightColor_;
+	Color3d color_;
 };
 
 class PointLight : public Light {
 public:
 	enum Falloff {
-		FALLOFF_NONE = 0,
-		FALLOFF_LINEAR = 1,
-		FALLOFF_QUADRATIC = 2
+		FALLOFF_NONE,
+		FALLOFF_LINEAR,
+		FALLOFF_QUADRATIC,
 	};
 	Vector4d point_;
 	Falloff falloff_;
@@ -197,10 +197,15 @@ public:
 	void addGeometry(std::unique_ptr<Geometry>&& geometry) {
 		geometries_.push_back(std::move(geometry));
 	}
+	/***** LIGHTS ******/
+	void addLight(std::unique_ptr<Light>&& light) {
+		lights_.push_back(std::move(light));
+	}
 private:
 	bool hasCamera_;
 	Camera camera_;
 	std::vector<std::unique_ptr<Geometry>> geometries_;
+	std::vector<std::unique_ptr<Light>> lights_;
 };
 
 class RTParser {
@@ -307,6 +312,9 @@ public:
 			auto hvec = [&](int offset) {
 				return Vector3d(&params[offset]).homogeneous();
 			};
+			auto dvec = [&](int offset) {
+				return hvec(offset).cwiseProduct(Vector4d(1,1,1,0));
+			};
 			Vector3d fvec = cvec(0);
 			switch (ltype.type_) {
 				case LINE_TYPE_TRANSFORM_IDENTITY:
@@ -346,6 +354,8 @@ public:
 				case LINE_TYPE_SPHERE:
 				{
 					Sphere* sphere = new Sphere();
+					sphere->transform_ = transform_;
+					sphere->material_ = material_;
 					sphere->center_ = hvec(0);
 					sphere->radius_ = params[3];
 					scene_.addGeometry(std::unique_ptr<Geometry>(sphere));
@@ -354,13 +364,48 @@ public:
 				case LINE_TYPE_TRIANGLE:
 				{
 					Triangle* triangle = new Triangle();
+					triangle->transform_ = transform_;
+					triangle->material_ = material_;
 					triangle->points_ = {{ hvec(0), hvec(3), hvec(6) }};
 					scene_.addGeometry(std::unique_ptr<Geometry>(triangle));
 					break;
 				}
 				case LINE_TYPE_POINT_LIGHT:
 				{
+					PointLight::Falloff falloff = PointLight::FALLOFF_NONE;
+					switch ((int)params[6]) {
+						case 0: falloff = PointLight::FALLOFF_NONE; break;
+						case 1: falloff = PointLight::FALLOFF_LINEAR; break;
+						case 2: falloff = PointLight::FALLOFF_QUADRATIC; break;
+						default:
+							ParseException::showWarning(
+								"invalid falloff type", lineno);
+							break;
+					}
 					PointLight* light = new PointLight();
+					light->transform_ = transform_;
+					light->point_ = hvec(0);
+					light->color_ = cvec(3);
+					light->falloff_ = falloff;
+					scene_.addLight(std::unique_ptr<Light>(light));
+					break;
+				}
+				case LINE_TYPE_DIRECTIONAL_LIGHT:
+				{
+					DirectionalLight* light = new DirectionalLight();
+					light->transform_ = transform_;
+					light->direction_ = dvec(0);
+					light->color_ = cvec(3);
+					scene_.addLight(std::unique_ptr<Light>(light));
+					break;
+				}
+				case LINE_TYPE_AMBIENT_LIGHT:
+				{
+					AmbientLight* light = new AmbientLight();
+					light->transform_ = transform_;
+					light->color_ = cvec(0);
+					scene_.addLight(std::unique_ptr<Light>(light));
+					break;
 				}
 			}
 		}
