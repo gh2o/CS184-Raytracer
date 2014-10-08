@@ -7,6 +7,7 @@
 #include <memory>
 #include <map>
 #include <vector>
+#include <array>
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
@@ -51,19 +52,27 @@ public:
 	Vector4d upperRightPoint_;
 };
 
-class Sphere {
-private:
-	Vector4d centerPt_;
+class Geometry : public Transformable {
+};
+
+class Triangle : public Geometry {
+public:
+	std::array<Vector4d,3> points_;
+};
+
+class Sphere : public Geometry {
+public:
+	Vector4d center_;
 	float radius_;
 
 public:
 
 	Sphere(Vector4d inputCenter, float inputRadius) {
 		radius_ = inputRadius;
-		centerPt_ = inputCenter;
+		center_ = inputCenter;
 	}
 
-	Vector4d centerPt() { return centerPt_; }
+	Vector4d centerPt() { return center_; }
 	float radius() { return radius_; }
 
 	std::vector<Vector4d> sphereIntersection(Ray *inputRay) {
@@ -74,13 +83,13 @@ public:
 
 		std::vector<Vector4d> returnList;
 		float a = inputRay->direction_.dot(inputRay->direction_);
-		float b = 2 * inputRay->direction_.dot(inputRay->origin_ - centerPt_);
-		float c = (inputRay->origin_ - centerPt_).dot(inputRay->origin_ - centerPt_) - radius_*radius_;
+		float b = 2 * inputRay->direction_.dot(inputRay->origin_ - center_);
+		float c = (inputRay->origin_ - center_).dot(inputRay->origin_ - center_) - radius_*radius_;
 		float discriminant = pow(b,2) - 4*a*c;
 		float quadraticFormResult = float(-1 * b - sqrt(b*b-4*a*c)) / float(2*a);
 
 		Vector4d projectionPt = 
-			((centerPt_.dot(inputRay->origin_)) / pow(centerPt_.norm(), 2)) * centerPt_;
+			((center_.dot(inputRay->origin_)) / pow(center_.norm(), 2)) * center_;
 
 		if (discriminant < 0) {
 			return returnList;
@@ -90,10 +99,10 @@ public:
 			returnList.push_back(projectionPt);
 		} else {
 			Vector4d a = radius_;
-			Vector4d b = projectionPt - centerPt_;
+			Vector4d b = projectionPt - center_;
 			b = b.cwiseAbs();
 			Vector4d c = sqrt(pow(a,2) - b * b);
-			Vector4d distRayOrigToProjPt = projectonPt - centerPt_;
+			Vector4d distRayOrigToProjPt = projectonPt - center_;
 			distRayOrigToProjPt = distRayOrigToProjPt.cwiseAbs();
 			Vector4d distRayOrigToCenterPt = distRayOrigToProjPt - c;
 
@@ -109,7 +118,6 @@ public:
 		}
 		return returnList;
 	}
-
 };
 
 class ParseException : public std::runtime_error {
@@ -152,15 +160,21 @@ public:
 			for (int j = 200; j < 400; j++)
 				output(i,j) << 0,1,1;
 	}
+	/***** CAMERA *****/
 	bool hasCamera() { return hasCamera_; }
 	const Camera& camera() { return camera_; }
 	void camera(const Camera& camera) {
 		hasCamera_ = true;
 		camera_ = camera;
 	}
+	/***** OBJECTS ******/
+	void addGeometry(std::unique_ptr<Geometry>&& geometry) {
+		geometries_.push_back(std::move(geometry));
+	}
 private:
 	bool hasCamera_;
 	Camera camera_;
+	std::vector<std::unique_ptr<Geometry>> geometries_;
 };
 
 class RTParser {
@@ -292,6 +306,7 @@ public:
 					material_.specularCoefficient_ = params[9];
 					break;
 				case LINE_TYPE_CAMERA:
+				{
 					Camera camera;
 					camera.objectTransform_ = transform_;
 					camera.eyePoint_ = hvec(0);
@@ -301,6 +316,22 @@ public:
 					camera.upperRightPoint_ = hvec(12);
 					scene_.camera(camera);
 					break;
+				}
+				case LINE_TYPE_SPHERE:
+				{
+					Sphere* sphere = new Sphere();
+					sphere->center_ = hvec(0);
+					sphere->radius_ = params[3];
+					scene_.addGeometry(std::unique_ptr<Geometry>(sphere));
+					break;
+				}
+				case LINE_TYPE_TRIANGLE:
+				{
+					Triangle* triangle = new Triangle();
+					triangle->points_ = {{ hvec(0), hvec(3), hvec(6) }};
+					scene_.addGeometry(std::unique_ptr<Geometry>(triangle));
+					break;
+				}
 			}
 		}
 	}
