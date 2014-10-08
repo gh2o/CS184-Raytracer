@@ -66,13 +66,13 @@ public:
 	Vector4d centerPt() { return centerPt_; }
 	float radius() { return radius_; }
 
-	list<Vector4d> sphereIntersection(Ray *inputRay) {
+	std::vector<Vector4d> sphereIntersection(Ray *inputRay) {
 		/***** TO DO FOR LATER *****/
 		//see if vector collides first; calculate projection circle center
 		//onto ray and see if distance is > 0
 		//Vector4d circleCtrProjection
 
-		list<Vector4d> returnList;
+		std::vector<Vector4d> returnList;
 		float a = inputRay->direction_.dot(inputRay->direction_);
 		float b = 2 * inputRay->direction_.dot(inputRay->origin_ - centerPt_);
 		float c = (inputRay->origin_ - centerPt_).dot(inputRay->origin_ - centerPt_) - radius_*radius_;
