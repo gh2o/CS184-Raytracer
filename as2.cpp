@@ -84,7 +84,7 @@ private:
 		LineType(LineTypeValue type, int pmin, int pmax):
 			type_(type), pmin_(pmin), pmax_(pmax) {}
 	};
-	static std::map<std::string, LineType> LINE_TYPES;
+	static const std::map<std::string, LineType> LINE_TYPES;
 	static std::map<std::string, LineType> initializeLineTypes() {
 		return {
 			{"cam", {LINE_TYPE_CAMERA, 15}},
@@ -109,11 +109,52 @@ public:
 		int lineno = 1;
 		for (std::string line; std::getline(stream, line); lineno++) {
 			std::istringstream ss(line);
-			std::string type = extractToken(ss, lineno);
-			if (type.empty()) // blank line
+			std::string stype = extractToken(ss, lineno);
+			if (stype.empty()) {
+				// blank line
 				continue;
+			}
+			if (stype == "obj") {
+				// obj needs special handling
+				std::string filename = extractToken(ss, lineno);
+				if (filename.empty())
+					throw ParseException("obj requires a filename", lineno);
+				// TODO
+				abort();
+				continue;
+			}
+			auto iter = LINE_TYPES.find(stype);
+			if (iter == LINE_TYPES.end()) {
+				std::cerr << "Warning: unknown line type " << stype << std::endl;
+				continue;
+			}
+			LineType ltype = iter->second;
+			std::unique_ptr<double[]> params(new double[ltype.pmax_]);
+			std::fill(params.get(), params.get() + ltype.pmax_, 0.0);
+			for (int i = 0; i < ltype.pmax_; i++) {
+				std::string token = extractToken(ss, lineno);
+				if (token.empty()) {
+					if (i < ltype.pmin_) {
+						std::ostringstream es;
+						es << stype
+							<< " requires "
+							<< (ltype.pmin_ == ltype.pmax_ ? "" : "at least ")
+							<< ltype.pmin_
+							<< " parameters";
+						throw ParseException(es.str(), lineno);
+					} else {
+						break;
+					}
+				}
+				try {
+					params[i] = std::stod(token);
+				} catch (std::logic_error& e) {
+					std::ostringstream es;
+					es << "invalid number " << token;
+					throw ParseException(es.str(), lineno);
+				}
+			}
 			// TODO
-			LINE_TYPES[type];
 			abort();
 		}
 	}
@@ -135,7 +176,7 @@ public:
 			while (true) {
 				c = stream.get();
 				if (c == EOF)
-					throw ParseException(std::string("unclosed quotes", lineno));
+					throw ParseException("unclosed quotes", lineno);
 				if (c == '"')
 					break;
 				s.put(c);
@@ -182,7 +223,7 @@ private:
 	std::string filename_;
 };
 
-std::map<std::string, RTParser::LineType> RTParser::LINE_TYPES(RTParser::initializeLineTypes());
+const std::map<std::string, RTParser::LineType> RTParser::LINE_TYPES(RTParser::initializeLineTypes());
 
 static struct option programOptions[] = {
 	{"help", 0, NULL, 'h'},
