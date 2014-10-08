@@ -5,6 +5,7 @@
 #include <fstream>
 #include <locale>
 #include <memory>
+#include <map>
 #include <Eigen/Dense>
 
 using namespace Eigen;
@@ -59,6 +60,46 @@ public:
 };
 
 class RTParser {
+private:
+	enum LineTypeValue {
+		LINE_TYPE_CAMERA,
+		LINE_TYPE_SPHERE,
+		LINE_TYPE_TRIANGLE,
+		LINE_TYPE_POINT_LIGHT,
+		LINE_TYPE_DIRECTIONAL_LIGHT,
+		LINE_TYPE_AMBIENT_LIGHT,
+		LINE_TYPE_MATERIAL,
+		LINE_TYPE_TRANSFORM_TRANSLATE,
+		LINE_TYPE_TRANSFORM_ROTATE,
+		LINE_TYPE_TRANSFORM_SCALE,
+		LINE_TYPE_TRANSFORM_IDENTITY
+	};
+	struct LineType {
+		LineTypeValue type_;
+		int pmin_, pmax_;
+		LineType() = default;
+		LineType(const LineType&) = default;
+		LineType(LineTypeValue type, int pval) :
+			LineType(type, pval, pval) {}
+		LineType(LineTypeValue type, int pmin, int pmax):
+			type_(type), pmin_(pmin), pmax_(pmax) {}
+	};
+	static std::map<std::string, LineType> LINE_TYPES;
+	static std::map<std::string, LineType> initializeLineTypes() {
+		return {
+			{"cam", {LINE_TYPE_CAMERA, 15}},
+			{"sph", {LINE_TYPE_SPHERE, 4}},
+			{"tri", {LINE_TYPE_TRIANGLE, 9}},
+			{"ltp", {LINE_TYPE_POINT_LIGHT, 6, 7}},
+			{"ltd", {LINE_TYPE_DIRECTIONAL_LIGHT, 6}},
+			{"lta", {LINE_TYPE_AMBIENT_LIGHT, 3}},
+			{"mat", {LINE_TYPE_MATERIAL, 13}},
+			{"xft", {LINE_TYPE_TRANSFORM_TRANSLATE, 3}},
+			{"xfr", {LINE_TYPE_TRANSFORM_ROTATE, 3}},
+			{"xfs", {LINE_TYPE_TRANSFORM_SCALE, 3}},
+			{"xfz", {LINE_TYPE_TRANSFORM_IDENTITY, 0}}
+		};
+	}
 public:
 	RTParser(GlobalScene& scene) : scene_(scene) {}
 	void parseFile(std::string filename) {
@@ -72,6 +113,7 @@ public:
 			if (type.empty()) // blank line
 				continue;
 			// TODO
+			LINE_TYPES[type];
 			abort();
 		}
 	}
@@ -139,6 +181,8 @@ public:
 private:
 	std::string filename_;
 };
+
+std::map<std::string, RTParser::LineType> RTParser::LINE_TYPES(RTParser::initializeLineTypes());
 
 static struct option programOptions[] = {
 	{"help", 0, NULL, 'h'},
