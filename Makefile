@@ -1,10 +1,10 @@
 CXX := clang++
 LIBS := build/libpng/.libs/libpng16.a
-CFLAGS := -std=c++11 -O2 -Wall -Ieigen -Ilibpng
-LDFLAGS :=
+CXXFLAGS := -std=c++11 -O2 -Wall -Ieigen -Ilibpng
+LDFLAGS := -lz
 
 as2: as2.cpp $(LIBS)
-	$(CXX) $^ -o $@ $(CFLAGS) $(LDFLAGS) $(LIBS)
+	$(CXX) $^ -o $@ $(CXXFLAGS) $(LDFLAGS) $(LIBS)
 
 build/libpng/.libs/libpng16.a:
 	rm -rf build/libpng
