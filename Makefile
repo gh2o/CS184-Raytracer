@@ -10,4 +10,4 @@ build/libpng/.libs/libpng16.a:
 	rm -rf build/libpng
 	mkdir -p build/libpng
 	cd build/libpng && ../../libpng/configure --enable-static --disable-shared
-	make -C build/libpng libpng16.la
+	make -C build/libpng -j 4 libpng16.la
