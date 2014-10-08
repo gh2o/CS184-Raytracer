@@ -21,12 +21,27 @@ struct {
 	float t_;
 } Ray;
 
-struct Material {
+class Material {
+public:
 	Color3d ambientColor_;
 	Color3d diffuseColor_;
 	Color3d specularColor_;
 	Color3d reflectiveColor_;
 	double specularCoefficient_;
+};
+
+class Transformable {
+public:
+	Transform4d objectTransform_;
+};
+
+class Camera : public Transformable {
+public:
+	Vector4d eyePoint_;
+	Vector4d lowerLeftPoint_;
+	Vector4d lowerRightPoint_;
+	Vector4d upperLeftPoint_;
+	Vector4d upperRightPoint_;
 };
 
 class ParseException : public std::runtime_error {
@@ -62,11 +77,22 @@ class GlobalScene {
 public:
 	typedef Array<Vector3d, Dynamic, Dynamic, RowMajor> RasterImage;
 public:
+	GlobalScene() :
+		hasCamera_(false) {}
 	void renderScene(RasterImage& output) {
 		for (int i = 200; i < 600; i++)
 			for (int j = 200; j < 400; j++)
 				output(i,j) << 0,1,1;
 	}
+	bool hasCamera() { return hasCamera_; }
+	const Camera& camera() { return camera_; }
+	void camera(const Camera& camera) {
+		hasCamera_ = true;
+		camera_ = camera;
+	}
+private:
+	bool hasCamera_;
+	Camera camera_;
 };
 
 class RTParser {
@@ -167,10 +193,13 @@ public:
 					throw ParseException(es.str(), lineno);
 				}
 			}
-			auto ovec = [&](int offset){
+			auto cvec = [&](int offset){
 				return Color3d(&params[offset]);
 			};
-			Vector3d fvec = ovec(0);
+			auto hvec = [&](int offset) {
+				return Vector3d(&params[offset]).homogeneous();
+			};
+			Vector3d fvec = cvec(0);
 			switch (ltype.type_) {
 				case LINE_TYPE_TRANSFORM_IDENTITY:
 					transform_.setIdentity();
@@ -188,15 +217,23 @@ public:
 					));
 					break;
 				case LINE_TYPE_MATERIAL:
-					material_.ambientColor_ = ovec(0);
-					material_.diffuseColor_ = ovec(3);
-					material_.specularColor_ = ovec(6);
-					material_.reflectiveColor_ = ovec(10);
+					material_.ambientColor_ = cvec(0);
+					material_.diffuseColor_ = cvec(3);
+					material_.specularColor_ = cvec(6);
+					material_.reflectiveColor_ = cvec(10);
 					material_.specularCoefficient_ = params[9];
 					break;
+				case LINE_TYPE_CAMERA:
+					Camera camera;
+					camera.objectTransform_ = transform_;
+					camera.eyePoint_ = hvec(0);
+					camera.lowerLeftPoint_ = hvec(3);
+					camera.lowerRightPoint_ = hvec(6);
+					camera.upperLeftPoint_ = hvec(9);
+					camera.upperRightPoint_ = hvec(12);
+					scene_.camera(camera);
+					break;
 			}
-			// TODO
-			abort();
 		}
 	}
 	std::string extractToken(std::istream& stream, int lineno) {
