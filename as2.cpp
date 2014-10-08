@@ -5,7 +5,7 @@
 
 using namespace Eigen;
 
-typedef Matrix<double, 3, 1> Color;
+typedef Vector3d Color;
 
 struct {
 	Vector4d origin_;
