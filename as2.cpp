@@ -67,7 +67,6 @@ int main(int argc, char *argv[]) {
 		switch (opt) {
 			case 'o':
 				outputFilename = optarg;
-				std::cerr << "output: " << optarg << std::endl;
 				break;
 			case 'h':
 			case '?':
