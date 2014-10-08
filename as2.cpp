@@ -13,7 +13,7 @@
 using namespace Eigen;
 
 typedef Transform<double,3,Affine> Transform4d;
-typedef Vector3d Color3d;
+typedef Array<double,3,1> Color3d;
 
 struct {
 	Vector4d origin_;
@@ -21,12 +21,13 @@ struct {
 	float t_;
 } Ray;
 
-struct {
-	Color3d ambientColor;
-	Color3d diffuseColor;
-	Color3d specularColor;
-	Color3d reflectiveColor;
-} Material;
+struct Material {
+	Color3d ambientColor_;
+	Color3d diffuseColor_;
+	Color3d specularColor_;
+	Color3d reflectiveColor_;
+	double specularCoefficient_;
+};
 
 class ParseException : public std::runtime_error {
 public:
@@ -166,7 +167,10 @@ public:
 					throw ParseException(es.str(), lineno);
 				}
 			}
-			Vector3d fvec(&params[0]);
+			auto ovec = [&](int offset){
+				return Color3d(&params[offset]);
+			};
+			Vector3d fvec = ovec(0);
 			switch (ltype.type_) {
 				case LINE_TYPE_TRANSFORM_IDENTITY:
 					transform_.setIdentity();
@@ -182,6 +186,13 @@ public:
 						fvec.norm() * (2 * M_PI / 360.0),
 						fvec.normalized()
 					));
+					break;
+				case LINE_TYPE_MATERIAL:
+					material_.ambientColor_ = ovec(0);
+					material_.diffuseColor_ = ovec(3);
+					material_.specularColor_ = ovec(6);
+					material_.reflectiveColor_ = ovec(10);
+					material_.specularCoefficient_ = params[9];
 					break;
 			}
 			// TODO
@@ -225,6 +236,7 @@ public:
 private:
 	GlobalScene& scene_;
 	Transform4d transform_;
+	Material material_;
 };
 
 class PNGWriter {
