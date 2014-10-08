@@ -6,11 +6,14 @@
 #include <locale>
 #include <memory>
 #include <map>
-#include <Eigen/Dense>
+#include <vector>
+#include <Eigen/Core>
+#include <Eigen/Geometry>
 
 using namespace Eigen;
 
-typedef Vector3d Color;
+typedef Transform<double,3,Affine> Transform4d;
+typedef Vector3d Color3d;
 
 struct {
 	Vector4d origin_;
@@ -19,10 +22,10 @@ struct {
 } Ray;
 
 struct {
-	Color ambientColor;
-	Color diffuseColor;
-	Color specularColor;
-	Color reflectiveColor;
+	Color3d ambientColor;
+	Color3d diffuseColor;
+	Color3d specularColor;
+	Color3d reflectiveColor;
 } Material;
 
 class ParseException : public std::runtime_error {
@@ -31,8 +34,14 @@ public:
 		ParseException(msg, -1) {}
 	ParseException(std::string msg, int lineno) :
 		runtime_error(buildMessage(msg, lineno)) {}
+	static void showWarning(std::string msg) {
+		showWarning(msg, -1);
+	}
+	static void showWarning(std::string msg, int lineno) {
+		std::cerr << "Warning: " << buildMessage(msg, lineno) << std::endl;
+	}
 private:
-	std::string buildMessage(std::string msg, int lineno) {
+	static std::string buildMessage(std::string msg, int lineno) {
 		if (lineno > 0) {
 			std::ostringstream s;
 			s << "line " << lineno << ": " << msg;
@@ -101,7 +110,9 @@ private:
 		};
 	}
 public:
-	RTParser(GlobalScene& scene) : scene_(scene) {}
+	RTParser(GlobalScene& scene) :
+		scene_(scene),
+		transform_() {}
 	void parseFile(std::string filename) {
 		std::ifstream stream(filename);
 		if (!stream)
@@ -125,12 +136,13 @@ public:
 			}
 			auto iter = LINE_TYPES.find(stype);
 			if (iter == LINE_TYPES.end()) {
-				std::cerr << "Warning: unknown line type " << stype << std::endl;
+				std::ostringstream es;
+				es << "unknown line type " << stype;
+				ParseException::showWarning(es.str(), lineno);
 				continue;
 			}
 			LineType ltype = iter->second;
-			std::unique_ptr<double[]> params(new double[ltype.pmax_]);
-			std::fill(params.get(), params.get() + ltype.pmax_, 0.0);
+			std::vector<double> params;
 			for (int i = 0; i < ltype.pmax_; i++) {
 				std::string token = extractToken(ss, lineno);
 				if (token.empty()) {
@@ -147,12 +159,30 @@ public:
 					}
 				}
 				try {
-					params[i] = std::stod(token);
+					params.push_back(std::stod(token));
 				} catch (std::logic_error& e) {
 					std::ostringstream es;
 					es << "invalid number " << token;
 					throw ParseException(es.str(), lineno);
 				}
+			}
+			Vector3d fvec(&params[0]);
+			switch (ltype.type_) {
+				case LINE_TYPE_TRANSFORM_IDENTITY:
+					transform_.setIdentity();
+					break;
+				case LINE_TYPE_TRANSFORM_TRANSLATE:
+					transform_.pretranslate(fvec);
+					break;
+				case LINE_TYPE_TRANSFORM_SCALE:
+					transform_.prescale(fvec);
+					break;
+				case LINE_TYPE_TRANSFORM_ROTATE:
+					transform_.prerotate(AngleAxis<double>(
+						fvec.norm() * (2 * M_PI / 360.0),
+						fvec.normalized()
+					));
+					break;
 			}
 			// TODO
 			abort();
@@ -194,6 +224,7 @@ public:
 	}
 private:
 	GlobalScene& scene_;
+	Transform4d transform_;
 };
 
 class PNGWriter {
