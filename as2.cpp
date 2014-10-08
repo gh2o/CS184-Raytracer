@@ -40,7 +40,7 @@ public:
 
 class Transformable {
 public:
-	Transform4d objectTransform_;
+	Transform4d transform_;
 };
 
 class Camera : public Transformable {
@@ -52,7 +52,33 @@ public:
 	Vector4d upperRightPoint_;
 };
 
+class Light : public Transformable {
+public:
+	Color3d lightColor_;
+};
+
+class PointLight : public Light {
+public:
+	enum Falloff {
+		FALLOFF_NONE = 0,
+		FALLOFF_LINEAR = 1,
+		FALLOFF_QUADRATIC = 2
+	};
+	Vector4d point_;
+	Falloff falloff_;
+};
+
+class DirectionalLight : public Light {
+public:
+	Vector4d direction_;
+};
+
+class AmbientLight : public Light {
+};
+
 class Geometry : public Transformable {
+public:
+	Material material_;
 };
 
 class Triangle : public Geometry {
@@ -167,7 +193,7 @@ public:
 		hasCamera_ = true;
 		camera_ = camera;
 	}
-	/***** OBJECTS ******/
+	/***** GEOMETRIES ******/
 	void addGeometry(std::unique_ptr<Geometry>&& geometry) {
 		geometries_.push_back(std::move(geometry));
 	}
@@ -308,7 +334,7 @@ public:
 				case LINE_TYPE_CAMERA:
 				{
 					Camera camera;
-					camera.objectTransform_ = transform_;
+					camera.transform_ = transform_;
 					camera.eyePoint_ = hvec(0);
 					camera.lowerLeftPoint_ = hvec(3);
 					camera.lowerRightPoint_ = hvec(6);
@@ -331,6 +357,10 @@ public:
 					triangle->points_ = {{ hvec(0), hvec(3), hvec(6) }};
 					scene_.addGeometry(std::unique_ptr<Geometry>(triangle));
 					break;
+				}
+				case LINE_TYPE_POINT_LIGHT:
+				{
+					PointLight* light = new PointLight();
 				}
 			}
 		}
