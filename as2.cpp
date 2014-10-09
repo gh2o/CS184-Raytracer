@@ -142,7 +142,7 @@ public:
 			throw MathException("ray has no direction");
 		if (dir(3) != 0)
 			throw MathException("ray direction is a point vector");
-		direction_ = dir;
+		direction_ = dir.normalized();
 	}
 private:
 	Vector4d origin_;
