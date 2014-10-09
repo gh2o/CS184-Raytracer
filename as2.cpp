@@ -108,12 +108,12 @@ public:
 		double a = inputRay.direction_.dot(inputRay.direction_);
 		double b = 2 * inputRay.direction_.dot(originCenterDiff);
 		double c = originCenterDiff.dot(originCenterDiff) - radius_*radius_;
-		double determinant = b*b - 4*a*c;
-		if (determinant < 0) {
+		double discriminant = b*b - 4*a*c;
+		if (discriminant < 0) {
 			return false;
 		}
 		double leftSide = (-b) / (2*a);
-		double rightSide = sqrt(determinant) / (2*a);
+		double rightSide = sqrt(discriminant) / (2*a);
 		double resultLower = leftSide - rightSide;
 		double resultUpper = leftSide + rightSide;
 		double result;
@@ -125,60 +125,6 @@ public:
 		normalDirection = intersectionPt - center_;
 		return true;
 	}
-
-#if 0
-	Sphere(Vector4d inputCenter, float inputRadius) {
-		radius_ = inputRadius;
-		center_ = inputCenter;
-	}
-	
-	Vector4d centerPt() { return center_; }
-	float radius() { return radius_; }
-
-	std::vector<Vector4d> sphereIntersection(Ray *inputRay) {
-		/***** TO DO FOR LATER *****/
-		//see if vector collides first; calculate projection circle center
-		//onto ray and see if distance is > 0
-		//Vector4d circleCtrProjection
-
-		std::vector<Vector4d> returnList;
-		float a = inputRay->direction_.dot(inputRay->direction_);
-		float b = 2 * inputRay->direction_.dot(inputRay->origin_ - center_);
-		float c = (inputRay->origin_ - center_).dot(inputRay->origin_ - center_) - radius_*radius_;
-		float discriminant = pow(b,2) - 4*a*c;
-		float quadraticFormResult = float(-1 * b - sqrt(b*b-4*a*c)) / float(2*a);
-
-		Vector4d projectionPt = 
-			((center_.dot(inputRay->origin_)) / pow(center_.norm(), 2)) * center_;
-
-		if (discriminant < 0) {
-			return returnList;
-		} 
-
-		else if (discriminant == 0) {
-			returnList.push_back(projectionPt);
-		} else {
-			Vector4d a = radius_;
-			Vector4d b = projectionPt - center_;
-			b = b.cwiseAbs();
-			Vector4d c = sqrt(pow(a,2) - b * b);
-			Vector4d distRayOrigToProjPt = projectonPt - center_;
-			distRayOrigToProjPt = distRayOrigToProjPt.cwiseAbs();
-			Vector4d distRayOrigToCenterPt = distRayOrigToProjPt - c;
-
-			// finding first inersection point
-			Vector4d intersectionPt1 = inputRay->origin_ + inputRay->direction_ * distRayOrigToCenterPt;
-
-			// finding second intersection point
-			Vector4d halfCircleSegment = projectionPt_ - intersectionPt1;
-			Vector4d intersectionPt2 = intersectionPt1 + 2*halfCircleSegment;
-
-			returnList.push_back(intersectionPt1);
-			returnList.push_back(intersectionPt2);
-		}
-		return returnList;
-	}
-#endif
 };
 
 
@@ -242,10 +188,30 @@ public:
 	GlobalScene() :
 		hasCamera_(false) {}
 	void renderScene(RasterImage& output) {
-		for (int i = 200; i < 600; i++)
-			for (int j = 200; j < 400; j++)
-				output(i,j) << 0,1,1;
+		for (int r = 0; r < output.rows(); r++) {
+			for (int c = 0; c < output.cols(); c++) {
+				double row = r / output.rows();
+				double col = c / output.cols();
+				Vector4d pointOnImagePlane = col * (row * camera_.lowerLeftPoint_ +
+					(1.0 - row) * camera_.upperLeftPoint_) +
+					(1.0 - col) * (row * camera_.lowerRightPoint_ +
+						(1.0 - row) * camera_.upperRightPoint_);
+				Vector4d viewingRayDirection = (pointOnImagePlane - camera_.eyePoint_).normalized();
+				Vector4d viewingRayPoint = camera_.eyePoint_;
+				Ray viewingRay(viewingRayPoint, viewingRayDirection);
+
+				double minDistanceClosestObj = std::numeric_limits<double>::infinity();
+				// for (auto ptr : geometries_) {
+				// 	Vector4d intersectionPt, normalDirection;
+				// 	if (ptr -> calculateIntersectionNormal(viewingRay, intersectionPt, normalDirection) {
+				// 		float distance = 
+				// 	}
+
+				// }
+			}
+		}
 	}
+
 	/***** CAMERA *****/
 	bool hasCamera() { return hasCamera_; }
 	const Camera& camera() { return camera_; }
