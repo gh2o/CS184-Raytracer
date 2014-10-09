@@ -20,12 +20,10 @@ class Ray {
 public:
 	Vector4d origin_;
 	Vector4d direction_;
-	double t_;
 
-	Ray(Vector4d inputOrigin, Vector4d inputDirection, double inputT) {
+	Ray(Vector4d inputOrigin, Vector4d inputDirection) {
 		origin_ = inputOrigin;
-		direction_ = inputDirection;
-		t_ = inputT;
+		direction_ = inputDirection.normalized();
 	}
 };
 
@@ -79,6 +77,25 @@ class AmbientLight : public Light {
 class Geometry : public Transformable {
 public:
 	Material material_;
+
+	bool calculateIntersectionNormal(Ray inputRay, Vector4d& intersectionPt, Vector4d& normalDirection) {
+		Transform4d inverseTransform = transform_.inverse();
+		Ray transformedRay(inverseTransform * inputRay.origin_, inverseTransform * inputRay.direction_);
+		Vector4d transformedIntersectionPt, transformedNormalDirection;
+		bool hasIntersection = calculateIntNormInObjSpace(transformedRay, transformedIntersectionPt, 
+			transformedNormalDirection);
+		if (!hasIntersection) {
+			return false;
+		}
+		intersectionPt = transform_ * transformedIntersectionPt;
+		normalDirection = inverseTransform.matrix().transpose() * transformedNormalDirection;
+		if (transform_.matrix().determinant() < 0) {
+			normalDirection = normalDirection * -1;
+		}
+		return true;
+	}
+
+	virtual bool calculateIntNormInObjSpace(Ray inputRay, Vector4d& intersectionPt, Vector4d& normalDirection) = 0;
 };
 
 class Sphere : public Geometry {
@@ -86,13 +103,41 @@ public:
 	Vector4d center_;
 	float radius_;
 
-public:
+	bool calculateIntNormInObjSpace(Ray inputRay, Vector4d& intersectionPt, Vector4d& normalDirection) {
+		Vector4d originCenterDiff = inputRay.origin_ - center_;
+		double a = inputRay.direction_.dot(inputRay.direction_);
+		double b = 2 * inputRay.direction_.dot(originCenterDiff);
+		double c = originCenterDiff.dot(originCenterDiff) - radius_*radius_;
+		double determinant = b*b - 4*a*c;
+		if (determinant < 0) {
+			return false;
+		} else {
+			double leftSide = (-b) / (2*a);
+			double rightSide = sqrt(determinant) / (2*a);
+			double resultLower = leftSide - rightSide;
+			double resultUpper = leftSide + rightSide;
+			double result;
+			if (resultUpper < 0) {
+				return false;
+			}
+			if (resultLower > 0) {
+				result = resultLower;
+			} 
+			else {
+				result = resultUpper;
+			}
+			intersectionPt = inputRay.origin_ + result * inputRay.direction_;
+			normalDirection = intersectionPt - center_;			
+			return true;
+		}
+	}
 
+#if 0
 	Sphere(Vector4d inputCenter, float inputRadius) {
 		radius_ = inputRadius;
 		center_ = inputCenter;
 	}
-
+	
 	Vector4d centerPt() { return center_; }
 	float radius() { return radius_; }
 
@@ -139,7 +184,9 @@ public:
 		}
 		return returnList;
 	}
+#endif
 };
+
 
 class Mesh : public Geometry {
 public:
@@ -156,6 +203,13 @@ public:
 		face.points_ = points;
 		face.normals_ = {{ n, n, n }};
 	}
+
+
+	/****** TODO ******/
+	bool calculateIntNormInObjSpace(Ray inputRay, Vector4d& intersectionPt, Vector4d& normalDirection) {
+		return false;
+	}
+
 };
 
 class ParseException : public std::runtime_error {
