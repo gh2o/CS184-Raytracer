@@ -551,6 +551,8 @@ private:
 	Material material_;
 };
 
+const std::map<std::string, RTParser::LineType> RTParser::LINE_TYPES(RTParser::initializeLineTypes());
+
 class PNGWriter {
 private:
 	typedef Matrix<uint8_t, 3, 1> Vector3uc;
@@ -578,11 +580,20 @@ private:
 	std::string filename_;
 };
 
-const std::map<std::string, RTParser::LineType> RTParser::LINE_TYPES(RTParser::initializeLineTypes());
+class ProgramOptions {
+public:
+	static const struct option getoptOptions[];
+	enum Options {
+		OPTION_HELP = 'h',
+		OPTION_OUTPUT = 'o',
+		OPTION_INTERSECTION_ONLY
+	};
+};
 
-static struct option programOptions[] = {
-	{"help", 0, NULL, 'h'},
-	{"output", 1, NULL, 'o'}
+const struct option ProgramOptions::getoptOptions[] = {
+	{"help", 0, NULL, OPTION_HELP},
+	{"output", 1, NULL, OPTION_OUTPUT},
+	{"intersection-only", 0, NULL, OPTION_INTERSECTION_ONLY}
 };
 
 static void printHelp(const char *prog) {
@@ -594,12 +605,12 @@ int main(int argc, char *argv[]) {
 	std::string outputFilename;
 	// parse options
 	int opt;
-	while ((opt = getopt_long(argc, argv, "ho:", programOptions, NULL)) != -1) {
+	while ((opt = getopt_long(argc, argv, "ho:", ProgramOptions::getoptOptions, NULL)) != -1) {
 		switch (opt) {
-			case 'o':
+			case ProgramOptions::OPTION_OUTPUT:
 				outputFilename = optarg;
 				break;
-			case 'h':
+			case ProgramOptions::OPTION_HELP:
 			case '?':
 				printHelp(argv[0]);
 				return 1;
