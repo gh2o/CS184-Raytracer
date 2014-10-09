@@ -407,7 +407,7 @@ public:
 			auto cvec = [&](int offset){
 				return Color3d(&params[offset]);
 			};
-			auto hvec = [&](int offset) {
+			auto hvec = [&](int offset) -> Vector4d {
 				return Vector3d(&params[offset]).homogeneous();
 			};
 			auto dvec = [&](int offset) {
