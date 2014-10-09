@@ -682,7 +682,7 @@ int main(int argc, char *argv[]) {
 		return 1;
 	}
 	// render scene
-	GlobalScene::RasterImage image(2000,3000);
+	GlobalScene::RasterImage image(200,200);
 	scene.renderScene(image);
 	// write output
 	try {
