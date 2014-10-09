@@ -152,6 +152,7 @@ public:
 		Vector3d b = (points[2] - points[0]).head<3>();
 		Vector4d n(0,0,0,0);
 		n.head<3>() = a.cross(b);
+		n.normalize();
 		face.points_ = points;
 		face.normals_ = {{ n, n, n }};
 	}
@@ -326,6 +327,7 @@ public:
 			auto dvec = [&](int offset) {
 				Vector4d r(0,0,0,0);
 				r.head<3>() = Vector3d(&params[offset]);
+				r.normalize();
 				return r;
 			};
 			Vector3d fvec = cvec(0);
