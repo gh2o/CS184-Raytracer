@@ -322,18 +322,35 @@ public:
 					(1.0 - col) * (
 						row         * camera_.lowerLeftPoint_ +
 						(1.0 - row) * camera_.upperLeftPoint_);
-				Vector4d viewingRayDirection = (pointOnImagePlane - camera_.eyePoint_).normalized();
-				Vector4d viewingRayPoint = camera_.eyePoint_;
-				Ray viewingRay(viewingRayPoint, viewingRayDirection);
+				Ray viewingRay(camera_.eyePoint_, pointOnImagePlane - camera_.eyePoint_);
 
-				double minDistanceClosestObj = std::numeric_limits<double>::infinity();
-				// for (auto ptr : geometries_) {
-				// 	Vector4d intersectionPt, normalDirection;
-				// 	if (ptr -> calculateIntersectionNormal(viewingRay, intersectionPt, normalDirection) {
-				// 		float distance = 
-				// 	}
+				bool rayIntersected = false;
+				double closestDistance = std::numeric_limits<double>::infinity();
+				Vector4d closestIntersection, closestNormal;
+				Geometry* closestGeometry;
 
-				// }
+				for (auto& pointer : geometries_) {
+					Geometry& geometry = *pointer;
+					Vector4d intersection, normal;
+					if (!geometry.calculateIntersectionNormal(viewingRay,
+					                                          intersection, normal))
+						continue;
+					// check if closest
+					double distance = (intersection - viewingRay.origin()).norm();
+					if (distance >= closestDistance)
+						continue;
+					// update closest
+					rayIntersected = true;
+					closestDistance = distance;
+					closestIntersection = intersection;
+					closestNormal = normal;
+					closestGeometry = &geometry;
+				}
+
+				if (programOptions.intersectionOnly_) {
+					output(r,c) = rayIntersected ? Color3d(1,1,1) : Color3d(0,0,0);
+					continue;
+				}
 			}
 		}
 	}
