@@ -16,6 +16,15 @@ using namespace Eigen;
 typedef Transform<double,3,Affine> Transform4d;
 typedef Array<double,3,1> Color3d;
 
+class Util {
+public:
+	static Vector4d cross(Vector4d a, Vector4d b) {
+		Vector4d c = Vector4d::Zero();
+		c.head<3>() = a.head<3>().cross(b.head<3>());
+		return c;
+	}
+};
+
 class Ray {
 public:
 	Vector4d origin_;
@@ -188,22 +197,18 @@ public:
 	std::vector<Face> faces_;
 public:
 	void addTriangle(const std::array<Vector4d,3>& points) {
+		Vector4d a = points[1] - points[0];
+		Vector4d b = points[2] - points[0];
+		Vector4d n = Util::cross(a, b).normalized();
 		Face face;
-		Vector3d a = (points[1] - points[0]).head<3>();
-		Vector3d b = (points[2] - points[0]).head<3>();
-		Vector4d n(0,0,0,0);
-		n.head<3>() = a.cross(b);
-		n.normalize();
 		face.points_ = points;
 		face.normals_ = {{ n, n, n }};
+		faces_.push_back(face);
 	}
-
-
 	/****** TODO ******/
 	bool calculateIntNormInObjSpace(Ray inputRay, Vector4d& intersectionPt, Vector4d& normalDirection) {
 		return false;
 	}
-
 };
 
 class ParseException : public std::runtime_error {
