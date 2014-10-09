@@ -111,25 +111,19 @@ public:
 		double determinant = b*b - 4*a*c;
 		if (determinant < 0) {
 			return false;
-		} else {
-			double leftSide = (-b) / (2*a);
-			double rightSide = sqrt(determinant) / (2*a);
-			double resultLower = leftSide - rightSide;
-			double resultUpper = leftSide + rightSide;
-			double result;
-			if (resultUpper < 0) {
-				return false;
-			}
-			if (resultLower > 0) {
-				result = resultLower;
-			} 
-			else {
-				result = resultUpper;
-			}
-			intersectionPt = inputRay.origin_ + result * inputRay.direction_;
-			normalDirection = intersectionPt - center_;			
-			return true;
 		}
+		double leftSide = (-b) / (2*a);
+		double rightSide = sqrt(determinant) / (2*a);
+		double resultLower = leftSide - rightSide;
+		double resultUpper = leftSide + rightSide;
+		double result;
+		if (resultUpper < 0) {
+			return false;
+		}
+		result = resultLower > 0 ? resultLower : resultUpper;
+		intersectionPt = inputRay.origin_ + result * inputRay.direction_;
+		normalDirection = intersectionPt - center_;
+		return true;
 	}
 
 #if 0
