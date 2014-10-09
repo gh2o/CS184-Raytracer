@@ -16,6 +16,40 @@ using namespace Eigen;
 typedef Transform<double,3,Affine> Transform4d;
 typedef Array<double,3,1> Color3d;
 
+class ParseException : public std::runtime_error {
+public:
+	ParseException(std::string msg) :
+		ParseException(msg, -1) {}
+	ParseException(std::string msg, int lineno) :
+		runtime_error(buildMessage(msg, lineno)) {}
+	static void showWarning(std::string msg) {
+		showWarning(msg, -1);
+	}
+	static void showWarning(std::string msg, int lineno) {
+		std::cerr << "Warning: " << buildMessage(msg, lineno) << std::endl;
+	}
+private:
+	static std::string buildMessage(std::string msg, int lineno) {
+		if (lineno > 0) {
+			std::ostringstream s;
+			s << "line " << lineno << ": " << msg;
+			return s.str();
+		} else {
+			return msg;
+		}
+	}
+};
+
+class MathException : public std::runtime_error {
+public:
+	using runtime_error::runtime_error;
+};
+
+class WriteException : public std::runtime_error {
+public:
+	using runtime_error::runtime_error;
+};
+
 class Util {
 public:
 	static Vector4d cross(Vector4d a, Vector4d b) {
@@ -29,8 +63,13 @@ class Ray {
 public:
 	Vector4d origin_;
 	Vector4d direction_;
-
 	Ray(Vector4d inputOrigin, Vector4d inputDirection) {
+		if (inputDirection.isZero())
+			throw MathException("ray has no direction");
+		if (inputOrigin(3) == 0)
+			throw MathException("ray origin is a direction vector");
+		if (inputDirection(3) != 0)
+			throw MathException("ray direction is a point vector");
 		origin_ = inputOrigin;
 		direction_ = inputDirection.normalized();
 	}
@@ -210,35 +249,6 @@ public:
 	bool calculateIntNormInObjSpace(Ray inputRay, Vector4d& intersectionPt, Vector4d& normalDirection) {
 		return false;
 	}
-};
-
-class ParseException : public std::runtime_error {
-public:
-	ParseException(std::string msg) :
-		ParseException(msg, -1) {}
-	ParseException(std::string msg, int lineno) :
-		runtime_error(buildMessage(msg, lineno)) {}
-	static void showWarning(std::string msg) {
-		showWarning(msg, -1);
-	}
-	static void showWarning(std::string msg, int lineno) {
-		std::cerr << "Warning: " << buildMessage(msg, lineno) << std::endl;
-	}
-private:
-	static std::string buildMessage(std::string msg, int lineno) {
-		if (lineno > 0) {
-			std::ostringstream s;
-			s << "line " << lineno << ": " << msg;
-			return s.str();
-		} else {
-			return msg;
-		}
-	}
-};
-
-class WriteException : public std::runtime_error {
-public:
-	using runtime_error::runtime_error;
 };
 
 class GlobalScene {
