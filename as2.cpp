@@ -55,7 +55,7 @@ class Options {
 public:
 	bool parseCommandLine(int argc, char *argv[]) {
 		int opt;
-		while ((opt = getopt_long(argc, argv, "ho:", Options::getoptOptions, NULL)) != -1) {
+		while ((opt = getopt_long(argc, argv, "w:h:o:", Options::getoptOptions, NULL)) != -1) {
 			switch (opt) {
 				case OPTION_OUTPUT:
 					outputFilename_ = optarg;
@@ -63,6 +63,22 @@ public:
 				case OPTION_INTERSECTION_ONLY:
 					intersectionOnly_ = true;
 					break;
+				case OPTION_WIDTH:
+				case OPTION_HEIGHT:
+				{
+					int& dest = opt == OPTION_WIDTH ? renderWidth_ : renderHeight_;
+					try {
+						dest = std::stoi(optarg);
+					} catch (std::logic_error& e) {
+						std::cerr << "Error: Width and/or height is invalid." << std::endl;
+						return false;
+					}
+					if (dest <= 0) {
+						std::cerr << "Error: Width and/or height must be positive." << std::endl;
+						return false;
+					}
+					break;
+				}
 				case OPTION_HELP:
 				case '?':
 					printHelp(argv[0]);
@@ -88,12 +104,16 @@ public:
 public:
 	std::vector<std::string> inputFilenames_;
 	std::string outputFilename_;
+	int renderWidth_ = 500;
+	int renderHeight_ = 500;
 	bool intersectionOnly_ = false;
 public:
 	static const struct option getoptOptions[];
 	enum {
-		OPTION_HELP = 'h',
+		OPTION_HELP,
 		OPTION_OUTPUT = 'o',
+		OPTION_WIDTH = 'w',
+		OPTION_HEIGHT = 'h',
 		OPTION_INTERSECTION_ONLY
 	};
 };
@@ -102,6 +122,8 @@ Options programOptions;
 const struct option Options::getoptOptions[] = {
 	{"help", 0, NULL, OPTION_HELP},
 	{"output", 1, NULL, OPTION_OUTPUT},
+	{"width", 1, NULL, OPTION_WIDTH},
+	{"height", 1, NULL, OPTION_HEIGHT},
 	{"intersection-only", 0, NULL, OPTION_INTERSECTION_ONLY},
 	{0}
 };
@@ -691,7 +713,8 @@ int main(int argc, char *argv[]) {
 		return 1;
 	}
 	// render scene
-	GlobalScene::RasterImage image(200,200);
+	GlobalScene::RasterImage image(programOptions.renderHeight_,
+	                               programOptions.renderWidth_);
 	scene.renderScene(image);
 	// write output
 	try {
