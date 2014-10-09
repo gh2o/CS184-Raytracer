@@ -397,18 +397,39 @@ public:
 			return Color3d::Zero();
 		if (programOptions.intersectionOnly_)
 			return Color3d::Constant(1.0 / (targetDistance * targetDistance));
+		// normalize normal
+		targetNormal.normalize();
 		// calulate resulting color
 		Color3d resultColor = Color3d::Zero();
 		for (auto& pointer : lights_) {
 			Light& light = *pointer;
 			if (dynamic_cast<Light*>(&light)) {
 				// ambient
-				resultColor += light.color_ * targetGeometry->material_.ambientColor_;
+				double ambientIntensity = 1.0;
+				resultColor += ambientIntensity * light.color_ *
+					targetGeometry->material_.ambientColor_;
 			} else {
 				// check for occlusion
+				Ray rayToLight = light.calculateRayToLight(targetIntersection);
+				double distToLight = light.calculateDistanceToLight(targetIntersection);
+				double distToOccluder;
+				if (castRay(rayToLight, &distToOccluder, nullptr, nullptr, nullptr)
+						&& distToOccluder <= distToLight)
+					continue;
+				// diffuse
+				double diffuseIntensity = std::max(targetNormal.dot(rayToLight.direction()), 0.0);
+				resultColor += diffuseIntensity *
+					light.color_ * targetGeometry->material_.diffuseColor_;
+				// specular
+				Vector4d reflectDirection =
+					2 * targetNormal.dot(rayToLight.direction()) * targetNormal - rayToLight.direction();
+				double specularIntensity = pow(std::max(-viewingRay.direction().dot(reflectDirection), 0.0),
+					targetGeometry->material_.specularCoefficient_ );
+				resultColor += specularIntensity *
+					light.color_ * targetGeometry->material_.specularColor_;
 			}
 		}
-		abort();
+		return resultColor;
 	}
 
 	bool castRay(Ray castedRay, double* targetDistance, Geometry** targetGeometry,
