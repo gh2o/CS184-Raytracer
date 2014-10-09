@@ -81,11 +81,6 @@ public:
 	Material material_;
 };
 
-class Triangle : public Geometry {
-public:
-	std::array<Vector4d,3> points_;
-};
-
 class Sphere : public Geometry {
 public:
 	Vector4d center_;
@@ -143,6 +138,22 @@ public:
 			returnList.push_back(intersectionPt2);
 		}
 		return returnList;
+	}
+};
+
+class Mesh : public Geometry {
+public:
+	struct Face { std::array<Vector4d,3> points_, normals_; };
+	std::vector<Face> faces_;
+public:
+	void addTriangle(const std::array<Vector4d,3>& points) {
+		Face face;
+		Vector3d a = (points[1] - points[0]).head<3>();
+		Vector3d b = (points[2] - points[0]).head<3>();
+		Vector4d n(0,0,0,0);
+		n.head<3>() = a.cross(b);
+		face.points_ = points;
+		face.normals_ = {{ n, n, n }};
 	}
 };
 
@@ -313,7 +324,9 @@ public:
 				return Vector3d(&params[offset]).homogeneous();
 			};
 			auto dvec = [&](int offset) {
-				return hvec(offset).cwiseProduct(Vector4d(1,1,1,0));
+				Vector4d r(0,0,0,0);
+				r.head<3>() = Vector3d(&params[offset]);
+				return r;
 			};
 			Vector3d fvec = cvec(0);
 			switch (ltype.type_) {
@@ -363,11 +376,11 @@ public:
 				}
 				case LINE_TYPE_TRIANGLE:
 				{
-					Triangle* triangle = new Triangle();
-					triangle->transform_ = transform_;
-					triangle->material_ = material_;
-					triangle->points_ = {{ hvec(0), hvec(3), hvec(6) }};
-					scene_.addGeometry(std::unique_ptr<Geometry>(triangle));
+					Mesh* mesh = new Mesh();
+					mesh->transform_ = transform_;
+					mesh->material_ = material_;
+					mesh->addTriangle({{ hvec(0), hvec(3), hvec(6) }});
+					scene_.addGeometry(std::unique_ptr<Geometry>(mesh));
 					break;
 				}
 				case LINE_TYPE_POINT_LIGHT:
