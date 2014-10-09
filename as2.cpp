@@ -619,6 +619,10 @@ int main(int argc, char *argv[]) {
 			return 1;
 		}
 	}
+	if (!scene.hasCamera()) {
+		std::cerr << "Error: At least one camera must be specified." << std::endl;
+		return 1;
+	}
 	// render scene
 	GlobalScene::RasterImage image(2000,3000);
 	scene.renderScene(image);
