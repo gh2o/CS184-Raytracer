@@ -364,8 +364,8 @@ public:
 		Geometry* targetGeometry;
 		Vector4d targetIntersection, targetNormal;
 		double targetDistance;
-		bool rayIntersected = castRay(viewingRay, targetGeometry, targetDistance,
-				targetIntersection, targetNormal);
+		bool rayIntersected = castRay(viewingRay, &targetGeometry, &targetDistance,
+				&targetIntersection, &targetNormal);
 		if (!rayIntersected)
 			return Color3d::Zero();
 		if (programOptions.intersectionOnly_)
@@ -381,8 +381,10 @@ public:
 		abort();
 	}
 
-	bool castRay(Ray castedRay, Geometry*& targetGeometry, double& targetDistance,
-			Vector4d& targetIntersection, Vector4d& targetNormal) {
+	bool castRay(Ray castedRay, Geometry** targetGeometry, double* targetDistance,
+			Vector4d* targetIntersection, Vector4d* targetNormal) {
+		double tmpDistance;
+		targetDistance || (targetDistance = &tmpDistance);
 		bool rayIntersected = false;
 		for (auto& pointer : geometries_) {
 			Geometry& testGeometry = *pointer;
@@ -391,14 +393,17 @@ public:
 				continue;
 			// check if closest
 			double testDistance = (testIntersection - castedRay.origin()).norm();
-			if (rayIntersected && testDistance >= targetDistance)
+			if (rayIntersected && testDistance >= *targetDistance)
 				continue;
 			// update closest
 			rayIntersected = true;
-			targetDistance = testDistance;
-			targetGeometry = &testGeometry;
-			targetIntersection = testIntersection;
-			targetNormal = testNormal;
+			*targetDistance = testDistance;
+			if (targetGeometry)
+				*targetGeometry = &testGeometry;
+			if (targetIntersection)
+				*targetIntersection = testIntersection;
+			if (targetNormal)
+				*targetNormal = testNormal;
 		}
 		return rayIntersected;
 	}
