@@ -102,7 +102,8 @@ Options programOptions;
 const struct option Options::getoptOptions[] = {
 	{"help", 0, NULL, OPTION_HELP},
 	{"output", 1, NULL, OPTION_OUTPUT},
-	{"intersection-only", 0, NULL, OPTION_INTERSECTION_ONLY}
+	{"intersection-only", 0, NULL, OPTION_INTERSECTION_ONLY},
+	{0}
 };
 
 class Util {
