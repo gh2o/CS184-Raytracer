@@ -72,18 +72,27 @@ public:
 
 class Ray {
 public:
+	Ray(Vector4d ori, Vector4d dir) {
+		origin(ori);
+		direction(dir);
+	}
+	Vector4d origin() { return origin_; }
+	Vector4d direction() { return direction_; }
+	void origin(const Vector4d& ori) {
+		if (ori(3) == 0)
+			throw MathException("ray origin is a direction vector");
+		origin_ = ori;
+	}
+	void direction(const Vector4d& dir) {
+		if (dir.isZero())
+			throw MathException("ray has no direction");
+		if (dir(3) != 0)
+			throw MathException("ray direction is a point vector");
+		direction_ = dir;
+	}
+private:
 	Vector4d origin_;
 	Vector4d direction_;
-	Ray(Vector4d inputOrigin, Vector4d inputDirection) {
-		if (inputDirection.isZero())
-			throw MathException("ray has no direction");
-		if (inputOrigin(3) == 0)
-			throw MathException("ray origin is a direction vector");
-		if (inputDirection(3) != 0)
-			throw MathException("ray direction is a point vector");
-		origin_ = inputOrigin;
-		direction_ = inputDirection.normalized();
-	}
 };
 
 class Material {
@@ -140,7 +149,7 @@ public:
 	bool calculateIntersectionNormal(Ray inputRay, Vector4d& intersectionPt, Vector4d& normalDirection) {
 		Matrix4d fwdTransform = transform_.matrix();
 		Matrix4d invTransform = transform_.inverse().matrix();
-		Ray transformedRay(invTransform * inputRay.origin_, invTransform * inputRay.direction_);
+		Ray transformedRay(invTransform * inputRay.origin(), invTransform * inputRay.direction());
 		Vector4d transformedIntersectionPt, transformedNormalDirection;
 		bool hasIntersection = calculateIntNormInObjSpace(transformedRay, transformedIntersectionPt, 
 			transformedNormalDirection);
@@ -164,9 +173,9 @@ public:
 	float radius_;
 
 	bool calculateIntNormInObjSpace(Ray inputRay, Vector4d& intersectionPt, Vector4d& normalDirection) {
-		Vector4d originCenterDiff = inputRay.origin_ - center_;
-		double a = inputRay.direction_.dot(inputRay.direction_);
-		double b = 2 * inputRay.direction_.dot(originCenterDiff);
+		Vector4d originCenterDiff = inputRay.origin() - center_;
+		double a = inputRay.direction().dot(inputRay.direction());
+		double b = 2 * inputRay.direction().dot(originCenterDiff);
 		double c = originCenterDiff.dot(originCenterDiff) - radius_*radius_;
 		double discriminant = b*b - 4*a*c;
 		if (discriminant < 0) {
@@ -181,7 +190,7 @@ public:
 			return false;
 		}
 		result = resultLower > 0 ? resultLower : resultUpper;
-		intersectionPt = inputRay.origin_ + result * inputRay.direction_;
+		intersectionPt = inputRay.origin() + result * inputRay.direction();
 		normalDirection = intersectionPt - center_;
 		return true;
 	}
@@ -209,13 +218,13 @@ public:
 			// base vectors for matrix
 			Vector4d va = face.points_[1] - face.points_[0];
 			Vector4d vb = face.points_[2] - face.points_[0];
-			Vector4d dir = inputRay.direction_;
+			Vector4d dir = inputRay.direction();
 			Matrix4d m;
 			m << va, vb, -dir, Vector4d(0,0,0,1);
 			if (m.determinant() == 0)
 				continue;
 			// solve matrix for va and vb coeffs, direction scale t
-			Vector4d sol = m.householderQr().solve(inputRay.origin_ - face.points_[0]);
+			Vector4d sol = m.householderQr().solve(inputRay.origin() - face.points_[0]);
 			double a = sol(0);
 			double b = sol(1);
 			double t = sol(2);
