@@ -404,6 +404,9 @@ public:
 					throw ParseException(es.str(), lineno);
 				}
 			}
+			if (!extractToken(ss, lineno).empty()) {
+				ParseException::showWarning("extra parameters found", lineno);
+			}
 			auto cvec = [&](int offset){
 				return Color3d(&params[offset]);
 			};
