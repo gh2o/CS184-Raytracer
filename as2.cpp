@@ -312,6 +312,7 @@ public:
 	GlobalScene() :
 		hasCamera_(false) {}
 	void renderScene(RasterImage& output) {
+		double maxIntersectionColor = 0.0;
 		for (int r = 0; r < output.rows(); r++) {
 			for (int c = 0; c < output.cols(); c++) {
 				double row = (double)r / output.rows();
@@ -349,10 +350,17 @@ public:
 				}
 
 				if (programOptions.intersectionOnly_) {
-					output(r,c) = rayIntersected ? Color3d(1,1,1) : Color3d(0,0,0);
+					double d = 1.0 / (closestDistance * closestDistance);
+					output(r,c) = rayIntersected ? Color3d(d,d,d) : Color3d(0,0,0);
+					maxIntersectionColor = std::max(maxIntersectionColor, d);
 					continue;
 				}
 			}
+		}
+		if (programOptions.intersectionOnly_ && maxIntersectionColor != 0.0) {
+			for (int r = 0; r < output.rows(); r++)
+				for (int c = 0; c < output.cols(); c++)
+					output(r,c) /= maxIntersectionColor;
 		}
 	}
 
