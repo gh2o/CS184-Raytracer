@@ -88,18 +88,19 @@ public:
 	Material material_;
 
 	bool calculateIntersectionNormal(Ray inputRay, Vector4d& intersectionPt, Vector4d& normalDirection) {
-		Transform4d inverseTransform = transform_.inverse();
-		Ray transformedRay(inverseTransform * inputRay.origin_, inverseTransform * inputRay.direction_);
+		Matrix4d fwdTransform = transform_.matrix();
+		Matrix4d invTransform = transform_.inverse().matrix();
+		Ray transformedRay(invTransform * inputRay.origin_, invTransform * inputRay.direction_);
 		Vector4d transformedIntersectionPt, transformedNormalDirection;
 		bool hasIntersection = calculateIntNormInObjSpace(transformedRay, transformedIntersectionPt, 
 			transformedNormalDirection);
 		if (!hasIntersection) {
 			return false;
 		}
-		intersectionPt = transform_ * transformedIntersectionPt;
-		normalDirection = inverseTransform.matrix().transpose() * transformedNormalDirection;
-		if (transform_.matrix().determinant() < 0) {
-			normalDirection = normalDirection * -1;
+		intersectionPt = fwdTransform * transformedIntersectionPt;
+		normalDirection = invTransform.transpose() * transformedNormalDirection;
+		if (fwdTransform.determinant() < 0) {
+			normalDirection = -normalDirection;
 		}
 		return true;
 	}
