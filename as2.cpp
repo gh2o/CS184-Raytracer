@@ -580,51 +580,66 @@ private:
 	std::string filename_;
 };
 
-class ProgramOptions {
+class Options {
+public:
+	bool parseCommandLine(int argc, char *argv[]) {
+		int opt;
+		while ((opt = getopt_long(argc, argv, "ho:", Options::getoptOptions, NULL)) != -1) {
+			switch (opt) {
+				case OPTION_OUTPUT:
+					outputFilename_ = optarg;
+					break;
+				case OPTION_INTERSECTION_ONLY:
+					intersectionOnly_ = true;
+					break;
+				case OPTION_HELP:
+				case '?':
+					printHelp(argv[0]);
+					return false;
+			}
+		}
+		while (optind < argc) {
+			inputFilenames_.push_back(argv[optind++]);
+		}
+		if (inputFilenames_.empty()) {
+			std::cerr << "Error: At least one input file must be specified." << std::endl;
+			return false;
+		}
+		if (outputFilename_.empty()) {
+			std::cerr << "Error: An output file must be specified." << std::endl;
+			return false;
+		}
+		return true;
+	}
+	void printHelp(const char *prog) {
+		std::cerr << "Usage: " << prog << " [options] -o <output file> <input files>..." << std::endl;
+	}
+public:
+	std::vector<std::string> inputFilenames_;
+	std::string outputFilename_;
+	bool intersectionOnly_ = false;
 public:
 	static const struct option getoptOptions[];
-	enum Options {
+	enum {
 		OPTION_HELP = 'h',
 		OPTION_OUTPUT = 'o',
 		OPTION_INTERSECTION_ONLY
 	};
 };
 
-const struct option ProgramOptions::getoptOptions[] = {
+Options programOptions;
+const struct option Options::getoptOptions[] = {
 	{"help", 0, NULL, OPTION_HELP},
 	{"output", 1, NULL, OPTION_OUTPUT},
 	{"intersection-only", 0, NULL, OPTION_INTERSECTION_ONLY}
 };
 
-static void printHelp(const char *prog) {
-	std::cerr << "Usage: " << prog << " [options] -o <output file> <input files>..." << std::endl;
-}
-
 int main(int argc, char *argv[]) {
 	// program options
-	std::string outputFilename;
-	// parse options
-	int opt;
-	while ((opt = getopt_long(argc, argv, "ho:", ProgramOptions::getoptOptions, NULL)) != -1) {
-		switch (opt) {
-			case ProgramOptions::OPTION_OUTPUT:
-				outputFilename = optarg;
-				break;
-			case ProgramOptions::OPTION_HELP:
-			case '?':
-				printHelp(argv[0]);
-				return 1;
-		}
-	}
-	if (optind >= argc) {
-		std::cerr << "Error: At least one input file must be specified." << std::endl;
+	if (!programOptions.parseCommandLine(argc, argv))
 		return 1;
-	}
-	if (outputFilename.empty()) {
-		std::cerr << "Error: An output file must be specified." << std::endl;
-		return 1;
-	}
 	// check that output is writable
+	const std::string& outputFilename = programOptions.outputFilename_;
 	if (!std::ofstream(outputFilename)) {
 		std::cerr << "Error: Output file is not writable." << std::endl;
 		return 1;
@@ -633,10 +648,10 @@ int main(int argc, char *argv[]) {
 	}
 	// read input
 	GlobalScene scene;
-	while (optind < argc) {
+	for (std::string inputFilename : programOptions.inputFilenames_) {
 		RTParser parser(scene);
 		try {
-			parser.parseFile(argv[optind++]);
+			parser.parseFile(inputFilename);
 		} catch (const ParseException& e) {
 			std::cerr << "Error: " << e.what() << std::endl;
 			return 1;
