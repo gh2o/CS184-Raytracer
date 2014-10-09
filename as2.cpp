@@ -361,31 +361,46 @@ public:
 	}
 
 	Color3d traceRay(Ray viewingRay) {
+		Geometry* targetGeometry;
+		Vector4d targetIntersection, targetNormal;
+		double targetDistance;
+		bool rayIntersected = castRay(viewingRay, targetGeometry, targetDistance,
+				targetIntersection, targetNormal);
+		if (!rayIntersected)
+			return Color3d::Zero();
+		if (programOptions.intersectionOnly_)
+			return Color3d::Constant(1.0 / (targetDistance * targetDistance));
+		// calulate resulting color
+		Color3d resultColor = Color3d::Zero();
+		for (auto& pointer : lights_) {
+			Light& light = *pointer;
+			// ambient
+			resultColor += light.color_ * targetGeometry->material_.ambientColor_;
+			// check for occlusion
+		}
+		abort();
+	}
+
+	bool castRay(Ray castedRay, Geometry*& targetGeometry, double& targetDistance,
+			Vector4d& targetIntersection, Vector4d& targetNormal) {
 		bool rayIntersected = false;
-		double closestDistance = std::numeric_limits<double>::infinity();
-		Vector4d closestIntersection, closestNormal;
-		Geometry* closestGeometry;
 		for (auto& pointer : geometries_) {
-			Geometry& geometry = *pointer;
-			Vector4d intersection, normal;
-			if (!geometry.calculateIntersectionNormal(viewingRay, intersection, normal))
+			Geometry& testGeometry = *pointer;
+			Vector4d testIntersection, testNormal;
+			if (!testGeometry.calculateIntersectionNormal(castedRay, testIntersection, testNormal))
 				continue;
 			// check if closest
-			double distance = (intersection - viewingRay.origin()).norm();
-			if (distance >= closestDistance)
+			double testDistance = (testIntersection - castedRay.origin()).norm();
+			if (rayIntersected && testDistance >= targetDistance)
 				continue;
 			// update closest
 			rayIntersected = true;
-			closestDistance = distance;
-			closestIntersection = intersection;
-			closestNormal = normal;
-			closestGeometry = &geometry;
+			targetDistance = testDistance;
+			targetGeometry = &testGeometry;
+			targetIntersection = testIntersection;
+			targetNormal = testNormal;
 		}
-		if (programOptions.intersectionOnly_) {
-			double d = 1.0 / (closestDistance * closestDistance);
-			return rayIntersected ? Color3d(d,d,d) : Color3d(0,0,0);
-		}
-		abort();
+		return rayIntersected;
 	}
 
 	/***** CAMERA *****/
