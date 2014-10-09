@@ -533,10 +533,11 @@ public:
 					transform_.prescale(fvec);
 					break;
 				case LINE_TYPE_TRANSFORM_ROTATE:
-					transform_.prerotate(AngleAxis<double>(
-						fvec.norm() * (2 * M_PI / 360.0),
-						fvec.normalized()
-					));
+					if (!fvec.isZero())
+						transform_.prerotate(AngleAxis<double>(
+							fvec.norm() * (2 * M_PI / 360.0),
+							fvec.normalized()
+						));
 					break;
 				case LINE_TYPE_MATERIAL:
 					material_.ambientColor_ = cvec(0);
