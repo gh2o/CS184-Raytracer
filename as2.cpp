@@ -197,10 +197,19 @@ public:
 
 class Light : public Transformable {
 public:
+	virtual Vector4d calculateDirectionToLight(const Vector4d& source) = 0;
+	Ray calculateRayToLight(const Vector4d& source) {
+		return Ray(source, calculateDirectionToLight(source));
+	}
+public:
 	Color3d color_;
 };
 
 class PointLight : public Light {
+public:
+	Vector4d calculateDirectionToLight(const Vector4d& source) {
+		return point_ - source;
+	}
 public:
 	enum Falloff {
 		FALLOFF_NONE,
@@ -213,10 +222,17 @@ public:
 
 class DirectionalLight : public Light {
 public:
+	Vector4d calculateDirectionToLight(const Vector4d& source) {
+		return -direction_;
+	}
+public:
 	Vector4d direction_;
 };
 
 class AmbientLight : public Light {
+	Vector4d calculateDirectionToLight(const Vector4d& source) {
+		return Vector4d::Zero();
+	}
 };
 
 class Geometry : public Transformable {
@@ -374,9 +390,12 @@ public:
 		Color3d resultColor = Color3d::Zero();
 		for (auto& pointer : lights_) {
 			Light& light = *pointer;
-			// ambient
-			resultColor += light.color_ * targetGeometry->material_.ambientColor_;
-			// check for occlusion
+			if (dynamic_cast<Light*>(&light)) {
+				// ambient
+				resultColor += light.color_ * targetGeometry->material_.ambientColor_;
+			} else {
+				// check for occlusion
+			}
 		}
 		abort();
 	}
