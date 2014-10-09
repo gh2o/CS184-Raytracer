@@ -563,7 +563,8 @@ public:
 							<< " parameters";
 						throw ParseException(es.str(), lineno);
 					} else {
-						break;
+						params.push_back(0.0);
+						continue;
 					}
 				}
 				try {
