@@ -51,6 +51,60 @@ public:
 	using runtime_error::runtime_error;
 };
 
+class Options {
+public:
+	bool parseCommandLine(int argc, char *argv[]) {
+		int opt;
+		while ((opt = getopt_long(argc, argv, "ho:", Options::getoptOptions, NULL)) != -1) {
+			switch (opt) {
+				case OPTION_OUTPUT:
+					outputFilename_ = optarg;
+					break;
+				case OPTION_INTERSECTION_ONLY:
+					intersectionOnly_ = true;
+					break;
+				case OPTION_HELP:
+				case '?':
+					printHelp(argv[0]);
+					return false;
+			}
+		}
+		while (optind < argc) {
+			inputFilenames_.push_back(argv[optind++]);
+		}
+		if (inputFilenames_.empty()) {
+			std::cerr << "Error: At least one input file must be specified." << std::endl;
+			return false;
+		}
+		if (outputFilename_.empty()) {
+			std::cerr << "Error: An output file must be specified." << std::endl;
+			return false;
+		}
+		return true;
+	}
+	void printHelp(const char *prog) {
+		std::cerr << "Usage: " << prog << " [options] -o <output file> <input files>..." << std::endl;
+	}
+public:
+	std::vector<std::string> inputFilenames_;
+	std::string outputFilename_;
+	bool intersectionOnly_ = false;
+public:
+	static const struct option getoptOptions[];
+	enum {
+		OPTION_HELP = 'h',
+		OPTION_OUTPUT = 'o',
+		OPTION_INTERSECTION_ONLY
+	};
+};
+
+Options programOptions;
+const struct option Options::getoptOptions[] = {
+	{"help", 0, NULL, OPTION_HELP},
+	{"output", 1, NULL, OPTION_OUTPUT},
+	{"intersection-only", 0, NULL, OPTION_INTERSECTION_ONLY}
+};
+
 class Util {
 public:
 	static Vector4d cross(const Vector4d& a, const Vector4d& b) {
@@ -581,60 +635,6 @@ public:
 	}
 private:
 	std::string filename_;
-};
-
-class Options {
-public:
-	bool parseCommandLine(int argc, char *argv[]) {
-		int opt;
-		while ((opt = getopt_long(argc, argv, "ho:", Options::getoptOptions, NULL)) != -1) {
-			switch (opt) {
-				case OPTION_OUTPUT:
-					outputFilename_ = optarg;
-					break;
-				case OPTION_INTERSECTION_ONLY:
-					intersectionOnly_ = true;
-					break;
-				case OPTION_HELP:
-				case '?':
-					printHelp(argv[0]);
-					return false;
-			}
-		}
-		while (optind < argc) {
-			inputFilenames_.push_back(argv[optind++]);
-		}
-		if (inputFilenames_.empty()) {
-			std::cerr << "Error: At least one input file must be specified." << std::endl;
-			return false;
-		}
-		if (outputFilename_.empty()) {
-			std::cerr << "Error: An output file must be specified." << std::endl;
-			return false;
-		}
-		return true;
-	}
-	void printHelp(const char *prog) {
-		std::cerr << "Usage: " << prog << " [options] -o <output file> <input files>..." << std::endl;
-	}
-public:
-	std::vector<std::string> inputFilenames_;
-	std::string outputFilename_;
-	bool intersectionOnly_ = false;
-public:
-	static const struct option getoptOptions[];
-	enum {
-		OPTION_HELP = 'h',
-		OPTION_OUTPUT = 'o',
-		OPTION_INTERSECTION_ONLY
-	};
-};
-
-Options programOptions;
-const struct option Options::getoptOptions[] = {
-	{"help", 0, NULL, OPTION_HELP},
-	{"output", 1, NULL, OPTION_OUTPUT},
-	{"intersection-only", 0, NULL, OPTION_INTERSECTION_ONLY}
 };
 
 int main(int argc, char *argv[]) {
