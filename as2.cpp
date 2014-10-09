@@ -285,15 +285,10 @@ public:
 		if (discriminant < 0) {
 			return false;
 		}
-		double leftSide = (-b) / (2*a);
-		double rightSide = sqrt(discriminant) / (2*a);
-		double resultLower = leftSide - rightSide;
-		double resultUpper = leftSide + rightSide;
-		double result;
-		if (resultUpper < 0) {
+		double result = (-b - sqrt(discriminant)) / (2*a);
+		if (result < 0) {
 			return false;
 		}
-		result = resultLower > 0 ? resultLower : resultUpper;
 		intersectionPt = inputRay.origin() + result * inputRay.direction();
 		normalDirection = intersectionPt - center_;
 		return true;
