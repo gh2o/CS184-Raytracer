@@ -364,7 +364,7 @@ public:
 		Geometry* targetGeometry;
 		Vector4d targetIntersection, targetNormal;
 		double targetDistance;
-		bool rayIntersected = castRay(viewingRay, &targetGeometry, &targetDistance,
+		bool rayIntersected = castRay(viewingRay, &targetDistance, &targetGeometry,
 				&targetIntersection, &targetNormal);
 		if (!rayIntersected)
 			return Color3d::Zero();
@@ -381,7 +381,7 @@ public:
 		abort();
 	}
 
-	bool castRay(Ray castedRay, Geometry** targetGeometry, double* targetDistance,
+	bool castRay(Ray castedRay, double* targetDistance, Geometry** targetGeometry,
 			Vector4d* targetIntersection, Vector4d* targetNormal) {
 		double tmpDistance;
 		targetDistance || (targetDistance = &tmpDistance);
