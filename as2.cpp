@@ -329,12 +329,11 @@ public:
 
 class GlobalScene {
 public:
-	typedef Array<Vector3d, Dynamic, Dynamic, RowMajor> RasterImage;
+	typedef Array<Color3d, Dynamic, Dynamic, RowMajor> RasterImage;
 public:
 	GlobalScene() :
 		hasCamera_(false) {}
 	void renderScene(RasterImage& output) {
-		double maxIntersectionColor = 0.0;
 		for (int r = 0; r < output.rows(); r++) {
 			for (int c = 0; c < output.cols(); c++) {
 				double row = (double)r / output.rows();
@@ -347,43 +346,46 @@ public:
 						row         * camera_.lowerLeftPoint_ +
 						(1.0 - row) * camera_.upperLeftPoint_);
 				Ray viewingRay(camera_.eyePoint_, pointOnImagePlane - camera_.eyePoint_);
-
-				bool rayIntersected = false;
-				double closestDistance = std::numeric_limits<double>::infinity();
-				Vector4d closestIntersection, closestNormal;
-				Geometry* closestGeometry;
-
-				for (auto& pointer : geometries_) {
-					Geometry& geometry = *pointer;
-					Vector4d intersection, normal;
-					if (!geometry.calculateIntersectionNormal(viewingRay,
-					                                          intersection, normal))
-						continue;
-					// check if closest
-					double distance = (intersection - viewingRay.origin()).norm();
-					if (distance >= closestDistance)
-						continue;
-					// update closest
-					rayIntersected = true;
-					closestDistance = distance;
-					closestIntersection = intersection;
-					closestNormal = normal;
-					closestGeometry = &geometry;
-				}
-
-				if (programOptions.intersectionOnly_) {
-					double d = 1.0 / (closestDistance * closestDistance);
-					output(r,c) = rayIntersected ? Color3d(d,d,d) : Color3d(0,0,0);
-					maxIntersectionColor = std::max(maxIntersectionColor, d);
-					continue;
-				}
+				output(r,c) = traceRay(viewingRay);
 			}
 		}
-		if (programOptions.intersectionOnly_ && maxIntersectionColor != 0.0) {
+		if (programOptions.intersectionOnly_) {
+			double maxBrightness = std::numeric_limits<double>::min();
 			for (int r = 0; r < output.rows(); r++)
 				for (int c = 0; c < output.cols(); c++)
-					output(r,c) /= maxIntersectionColor;
+					maxBrightness = std::max(maxBrightness, output(r,c).maxCoeff());
+			for (int r = 0; r < output.rows(); r++)
+				for (int c = 0; c < output.cols(); c++)
+					output(r,c) /= maxBrightness;
 		}
+	}
+
+	Color3d traceRay(Ray viewingRay) {
+		bool rayIntersected = false;
+		double closestDistance = std::numeric_limits<double>::infinity();
+		Vector4d closestIntersection, closestNormal;
+		Geometry* closestGeometry;
+		for (auto& pointer : geometries_) {
+			Geometry& geometry = *pointer;
+			Vector4d intersection, normal;
+			if (!geometry.calculateIntersectionNormal(viewingRay, intersection, normal))
+				continue;
+			// check if closest
+			double distance = (intersection - viewingRay.origin()).norm();
+			if (distance >= closestDistance)
+				continue;
+			// update closest
+			rayIntersected = true;
+			closestDistance = distance;
+			closestIntersection = intersection;
+			closestNormal = normal;
+			closestGeometry = &geometry;
+		}
+		if (programOptions.intersectionOnly_) {
+			double d = 1.0 / (closestDistance * closestDistance);
+			return rayIntersected ? Color3d(d,d,d) : Color3d(0,0,0);
+		}
+		abort();
 	}
 
 	/***** CAMERA *****/
