@@ -8,6 +8,7 @@
 #include <map>
 #include <vector>
 #include <array>
+#include <limits>
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
@@ -201,9 +202,42 @@ public:
 		face.normals_ = {{ n, n, n }};
 		faces_.push_back(face);
 	}
-	/****** TODO ******/
 	bool calculateIntNormInObjSpace(Ray inputRay, Vector4d& intersectionPt, Vector4d& normalDirection) {
-		return false;
+		bool closestExists = false;
+		double closestDist = std::numeric_limits<double>::infinity();
+		for (Face& face : faces_) {
+			// base vectors for matrix
+			Vector4d va = face.points_[1] - face.points_[0];
+			Vector4d vb = face.points_[2] - face.points_[0];
+			Vector4d dir = inputRay.direction_;
+			Matrix4d m;
+			m << va, vb, -dir, Vector4d(0,0,0,1);
+			if (m.determinant() == 0)
+				continue;
+			// solve matrix for va and vb coeffs, direction scale t
+			Vector4d sol = m.householderQr().solve(inputRay.origin_ - face.points_[0]);
+			double a = sol(0);
+			double b = sol(1);
+			double t = sol(2);
+			// validate constraints
+			if (a < 0 || b < 0 || a + b > 1)
+				continue;
+			if (t < 0)
+				continue;
+			// check if closest
+			double dist = t * dir.norm();
+			if (dist >= closestDist)
+				continue;
+			// update closest
+			closestExists = true;
+			closestDist = dist;
+			intersectionPt = face.points_[0] + a * va + b * vb;
+			normalDirection =
+				(1.0 - a - b) * face.normals_[0] +
+				a * face.normals_[1] +
+				b * face.normals_[2];
+		}
+		return closestExists;
 	}
 };
 
