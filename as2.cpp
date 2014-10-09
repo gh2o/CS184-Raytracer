@@ -336,14 +336,18 @@ public:
 			double dist = t * dir.norm();
 			if (dist >= closestDist)
 				continue;
+			// check normal if one sided
+			Vector4d testNormal =
+				(1.0 - a - b) * face.normals_[0] +
+				a * face.normals_[1] +
+				b * face.normals_[2];
+			if (testNormal.dot(inputRay.direction()) >= 0)
+				continue; // normal should be opposite of ray direction
 			// update closest
 			closestExists = true;
 			closestDist = dist;
 			intersectionPt = face.points_[0] + a * va + b * vb;
-			normalDirection =
-				(1.0 - a - b) * face.normals_[0] +
-				a * face.normals_[1] +
-				b * face.normals_[2];
+			normalDirection = testNormal;
 		}
 		return closestExists;
 	}
