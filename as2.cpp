@@ -403,7 +403,7 @@ public:
 		Color3d resultColor = Color3d::Zero();
 		for (auto& pointer : lights_) {
 			Light& light = *pointer;
-			if (dynamic_cast<Light*>(&light)) {
+			if (dynamic_cast<AmbientLight*>(&light)) {
 				// ambient
 				double ambientIntensity = 1.0;
 				resultColor += ambientIntensity * light.color_ *
