@@ -302,13 +302,20 @@ public:
 	std::vector<Face> faces_;
 public:
 	void addTriangle(const std::array<Vector4d,3>& points) {
-		Vector4d a = points[1] - points[0];
-		Vector4d b = points[2] - points[0];
-		Vector4d n = Util::cross(a, b).normalized();
-		Face face;
-		face.points_ = points;
-		face.normals_ = {{ n, n, n }};
-		faces_.push_back(face);
+		const Vector4d& v0 = points[0];
+		const Vector4d& v1 = points[1];
+		const Vector4d& v2 = points[2];
+		Vector4d n = Util::cross(v1 - v0, v2 - v0).normalized();
+		Vector4d ep = std::numeric_limits<double>::epsilon()
+			* std::max({v0.sum(), v1.sum(), v2.sum()}) * n;
+		for (int s = -1; s <= 1; s += 2) {
+			Face face;
+			face.points_ = points;
+			face.normals_ = {{ s*n, s*n, s*n }};
+			for (Vector4d& point : face.points_)
+				point += s*ep;
+			faces_.push_back(face);
+		}
 	}
 	bool calculateIntNormInObjSpace(Ray inputRay, Vector4d& intersectionPt, Vector4d& normalDirection) {
 		bool closestExists = false;
