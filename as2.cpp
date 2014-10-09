@@ -252,10 +252,13 @@ public:
 			for (int c = 0; c < output.cols(); c++) {
 				double row = r / output.rows();
 				double col = c / output.cols();
-				Vector4d pointOnImagePlane = col * (row * camera_.lowerLeftPoint_ +
-					(1.0 - row) * camera_.upperLeftPoint_) +
-					(1.0 - col) * (row * camera_.lowerRightPoint_ +
-						(1.0 - row) * camera_.upperRightPoint_);
+				Vector4d pointOnImagePlane =
+					col * (
+						row *         camera_.lowerRightPoint_ +
+						(1.0 - row) * camera_.upperRightPoint_) +
+					(1.0 - col) * (
+						row         * camera_.lowerLeftPoint_ +
+						(1.0 - row) * camera_.upperLeftPoint_);
 				Vector4d viewingRayDirection = (pointOnImagePlane - camera_.eyePoint_).normalized();
 				Vector4d viewingRayPoint = camera_.eyePoint_;
 				Ray viewingRay(viewingRayPoint, viewingRayDirection);
