@@ -250,8 +250,8 @@ public:
 	void renderScene(RasterImage& output) {
 		for (int r = 0; r < output.rows(); r++) {
 			for (int c = 0; c < output.cols(); c++) {
-				double row = r / output.rows();
-				double col = c / output.cols();
+				double row = (double)r / output.rows();
+				double col = (double)c / output.cols();
 				Vector4d pointOnImagePlane =
 					col * (
 						row *         camera_.lowerRightPoint_ +
