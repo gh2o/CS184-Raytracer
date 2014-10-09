@@ -422,7 +422,7 @@ private:
 public:
 	RTParser(GlobalScene& scene) :
 		scene_(scene),
-		transform_() {}
+		transform_(Transform4d::Identity()) {}
 	void parseFile(std::string filename) {
 		std::ifstream stream(filename);
 		if (!stream)
