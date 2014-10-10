@@ -84,14 +84,14 @@ Color3d Scene::traceRay(Ray viewingRay, int bounceDepth) {
 }
 
 bool Scene::castRay(Ray castedRay, double* targetDistance, Geometry** targetGeometry,
-		Vector4d* targetIntersection, Vector4d* targetNormal) {
+		Vector4d* targetIntersection, Vector4d* targetNormal, bool reverseNormals) {
 	double tmpDistance;
 	targetDistance || (targetDistance = &tmpDistance);
 	bool rayIntersected = false;
 	for (auto& pointer : geometries_) {
 		Geometry& testGeometry = *pointer;
 		Vector4d testIntersection, testNormal;
-		if (!testGeometry.calculateIntersectionNormal(castedRay, testIntersection, testNormal, false))
+		if (!testGeometry.calculateIntersectionNormal(castedRay, testIntersection, testNormal, reverseNormals))
 			continue;
 		// check if closest
 		double testDistance = (testIntersection - castedRay.origin()).norm();

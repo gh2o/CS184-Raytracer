@@ -15,7 +15,7 @@ public:
 	void renderScene(RasterImage& output);
 	Color3d traceRay(Ray viewingRay, int bounceDepth);
 	bool castRay(Ray castedRay, double* targetDistance, Geometry** targetGeometry,
-			Vector4d* targetIntersection, Vector4d* targetNormal);
+			Vector4d* targetIntersection, Vector4d* targetNormal, bool reverseNormals = false);
 
 	/***** CAMERA *****/
 	bool hasCamera() { return hasCamera_; }
