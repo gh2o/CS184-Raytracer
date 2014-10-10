@@ -79,6 +79,18 @@ public:
 					}
 					break;
 				}
+				case OPTION_BOUNCE_DEPTH:
+					try {
+						bounceDepth_ = std::stoi(optarg);
+					} catch (std::logic_error& e) {
+						std::cerr << "Error: Bounce depth is invalid." << std::endl;
+						return false;
+					}
+					if (bounceDepth_ < 0) {
+						std::cerr << "Error: Bounce depth must be non-negative." << std::endl;
+						return false;
+					}
+					break;
 				case OPTION_HELP:
 				case '?':
 					printHelp(argv[0]);
@@ -106,6 +118,7 @@ public:
 	std::string outputFilename_;
 	int renderWidth_ = 500;
 	int renderHeight_ = 500;
+	int bounceDepth_ = 10;
 	bool intersectionOnly_ = false;
 public:
 	static const struct option getoptOptions[];
@@ -114,6 +127,7 @@ public:
 		OPTION_OUTPUT = 'o',
 		OPTION_WIDTH = 'w',
 		OPTION_HEIGHT = 'h',
+		OPTION_BOUNCE_DEPTH,
 		OPTION_INTERSECTION_ONLY
 	};
 };
@@ -124,6 +138,7 @@ const struct option Options::getoptOptions[] = {
 	{"output", 1, NULL, OPTION_OUTPUT},
 	{"width", 1, NULL, OPTION_WIDTH},
 	{"height", 1, NULL, OPTION_HEIGHT},
+	{"bdepth", 1, NULL, OPTION_BOUNCE_DEPTH},
 	{"intersection-only", 0, NULL, OPTION_INTERSECTION_ONLY},
 	{0}
 };
@@ -379,7 +394,7 @@ public:
 						row         * camera_.lowerLeftPoint_ +
 						(1.0 - row) * camera_.upperLeftPoint_);
 				Ray viewingRay(camera_.eyePoint_, pointOnImagePlane - camera_.eyePoint_);
-				output(r,c) = traceRay(viewingRay);
+				output(r,c) = traceRay(viewingRay, programOptions.bounceDepth_);
 			}
 		}
 		if (programOptions.intersectionOnly_) {
@@ -393,7 +408,7 @@ public:
 		}
 	}
 
-	Color3d traceRay(Ray viewingRay) {
+	Color3d traceRay(Ray viewingRay, int bounceDepth) {
 		Geometry* targetGeometry;
 		Vector4d targetIntersection, targetNormal;
 		double targetDistance;
@@ -435,6 +450,16 @@ public:
 					light.color_ * targetGeometry->material_.specularColor_;
 			}
 		}
+		// bounce!!!
+		const Color3d& reflectiveColor = targetGeometry->material_.reflectiveColor_;
+		if (bounceDepth > 0 && !reflectiveColor.isZero()) {
+			const Vector4d& incomingDirection = viewingRay.direction();
+			Vector4d outgoingDirection =
+				incomingDirection - 2 * targetNormal.dot(incomingDirection) * targetNormal;
+			Ray outgoingRay(targetIntersection, outgoingDirection);
+			resultColor += traceRay(outgoingRay, bounceDepth - 1) * reflectiveColor;
+		}
+		// done!!!
 		return resultColor;
 	}
 
