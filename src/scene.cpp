@@ -52,9 +52,10 @@ Color3d Scene::traceRay(Ray viewingRay, int bounceDepth) {
 		} else {
 			// check for occlusion
 			Ray rayToLight = light.calculateRayToLight(targetIntersection);
+			bool shouldReverseNormals = targetNormal.dot(rayToLight.direction()) < 0;
 			double distToLight = light.calculateDistanceToLight(targetIntersection);
 			double distToOccluder;
-			if (castRay(rayToLight, &distToOccluder, nullptr, nullptr, nullptr)
+			if (castRay(rayToLight, &distToOccluder, nullptr, nullptr, nullptr, shouldReverseNormals)
 					&& distToOccluder <= distToLight)
 				continue;
 			// diffuse
