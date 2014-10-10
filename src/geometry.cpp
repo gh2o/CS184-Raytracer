@@ -51,7 +51,7 @@ bool Mesh::calculateIntNormInObjSpace(Ray inputRay, Vector4d& intersectionPt, Ve
 		if (m.determinant() == 0)
 			continue;
 		// solve matrix for va and vb coeffs, direction scale t
-		Vector4d sol = m.householderQr().solve(inputRay.origin() - face.points_[0]);
+		Vector4d sol = m.inverse() * (inputRay.origin() - face.points_[0]);
 		double a = sol(0);
 		double b = sol(1);
 		double t = sol(2);
