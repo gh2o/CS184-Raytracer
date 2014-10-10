@@ -1,4 +1,6 @@
 #pragma once
+#include "common.h"
+#include "exceptions.h"
 
 class Ray {
 public:
