@@ -1,6 +1,5 @@
 #pragma once
 #include "rtbase.h"
-#include "util.h"
 
 class Geometry : public Transformable {
 public:

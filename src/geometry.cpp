@@ -1,4 +1,5 @@
 #include "geometry.h"
+#include "util.h"
 
 bool Geometry::calculateIntersectionNormal(Ray inputRay, Vector4d& intersectionPt, Vector4d& normalDirection) {
 	Matrix4d fwdTransform = transform_.matrix();

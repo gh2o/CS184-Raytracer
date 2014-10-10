@@ -1,5 +1,6 @@
 #include <fstream>
 #include "parsers.h"
+#include "util.h"
 
 std::map<std::string, RTParser::LineType> RTParser::initializeLineTypes() {
 	return {
