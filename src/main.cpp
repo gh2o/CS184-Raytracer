@@ -16,143 +16,7 @@
 #include "rtbase.h"
 #include "lights.h"
 #include "geometry.h"
-
-class GlobalScene {
-public:
-	typedef Array<Color3d, Dynamic, Dynamic, RowMajor> RasterImage;
-public:
-	GlobalScene() :
-		hasCamera_(false) {}
-	void renderScene(RasterImage& output) {
-		for (int r = 0; r < output.rows(); r++) {
-			for (int c = 0; c < output.cols(); c++) {
-				double row = (r + 0.5) / output.rows();
-				double col = (c + 0.5) / output.cols();
-				Vector4d pointOnImagePlane =
-					col * (
-						row *         camera_.lowerRightPoint_ +
-						(1.0 - row) * camera_.upperRightPoint_) +
-					(1.0 - col) * (
-						row         * camera_.lowerLeftPoint_ +
-						(1.0 - row) * camera_.upperLeftPoint_);
-				Ray viewingRay(camera_.eyePoint_, pointOnImagePlane - camera_.eyePoint_);
-				output(r,c) = traceRay(viewingRay, programOptions.bounceDepth_);
-			}
-		}
-		if (programOptions.intersectionOnly_) {
-			double maxBrightness = std::numeric_limits<double>::min();
-			for (int r = 0; r < output.rows(); r++)
-				for (int c = 0; c < output.cols(); c++)
-					maxBrightness = std::max(maxBrightness, output(r,c).maxCoeff());
-			for (int r = 0; r < output.rows(); r++)
-				for (int c = 0; c < output.cols(); c++)
-					output(r,c) /= maxBrightness;
-		}
-	}
-
-	Color3d traceRay(Ray viewingRay, int bounceDepth) {
-		Geometry* targetGeometry;
-		Vector4d targetIntersection, targetNormal;
-		double targetDistance;
-		bool rayIntersected = castRay(viewingRay, &targetDistance, &targetGeometry,
-				&targetIntersection, &targetNormal);
-		if (!rayIntersected)
-			return Color3d::Zero();
-		if (programOptions.intersectionOnly_)
-			return Color3d::Constant(1.0 / (targetDistance * targetDistance));
-		// normalize normal
-		targetNormal.normalize();
-		// calulate resulting color
-		Color3d resultColor = Color3d::Zero();
-		for (auto& pointer : lights_) {
-			Light& light = *pointer;
-			if (dynamic_cast<AmbientLight*>(&light)) {
-				// ambient
-				double ambientIntensity = 1.0;
-				resultColor += ambientIntensity * light.color_ *
-					targetGeometry->material_.ambientColor_;
-			} else {
-				// check for occlusion
-				Ray rayToLight = light.calculateRayToLight(targetIntersection);
-				double distToLight = light.calculateDistanceToLight(targetIntersection);
-				double distToOccluder;
-				if (castRay(rayToLight, &distToOccluder, nullptr, nullptr, nullptr)
-						&& distToOccluder <= distToLight)
-					continue;
-				// diffuse
-				double diffuseIntensity = std::max(targetNormal.dot(rayToLight.direction()), 0.0);
-				resultColor += diffuseIntensity *
-					light.color_ * targetGeometry->material_.diffuseColor_;
-				// specular
-				Vector4d reflectDirection =
-					2 * targetNormal.dot(rayToLight.direction()) * targetNormal - rayToLight.direction();
-				double specularIntensity = pow(std::max(-viewingRay.direction().dot(reflectDirection), 0.0),
-					targetGeometry->material_.specularCoefficient_ );
-				resultColor += specularIntensity *
-					light.color_ * targetGeometry->material_.specularColor_;
-			}
-		}
-		// bounce!!!
-		const Color3d& reflectiveColor = targetGeometry->material_.reflectiveColor_;
-		if (bounceDepth > 0 && !reflectiveColor.isZero()) {
-			const Vector4d& incomingDirection = viewingRay.direction();
-			Vector4d outgoingDirection =
-				incomingDirection - 2 * targetNormal.dot(incomingDirection) * targetNormal;
-			Ray outgoingRay(targetIntersection, outgoingDirection);
-			resultColor += traceRay(outgoingRay, bounceDepth - 1) * reflectiveColor;
-		}
-		// done!!!
-		return resultColor;
-	}
-
-	bool castRay(Ray castedRay, double* targetDistance, Geometry** targetGeometry,
-			Vector4d* targetIntersection, Vector4d* targetNormal) {
-		double tmpDistance;
-		targetDistance || (targetDistance = &tmpDistance);
-		bool rayIntersected = false;
-		for (auto& pointer : geometries_) {
-			Geometry& testGeometry = *pointer;
-			Vector4d testIntersection, testNormal;
-			if (!testGeometry.calculateIntersectionNormal(castedRay, testIntersection, testNormal))
-				continue;
-			// check if closest
-			double testDistance = (testIntersection - castedRay.origin()).norm();
-			if (rayIntersected && testDistance >= *targetDistance)
-				continue;
-			// update closest
-			rayIntersected = true;
-			*targetDistance = testDistance;
-			if (targetGeometry)
-				*targetGeometry = &testGeometry;
-			if (targetIntersection)
-				*targetIntersection = testIntersection;
-			if (targetNormal)
-				*targetNormal = testNormal;
-		}
-		return rayIntersected;
-	}
-
-	/***** CAMERA *****/
-	bool hasCamera() { return hasCamera_; }
-	const Camera& camera() { return camera_; }
-	void camera(const Camera& camera) {
-		hasCamera_ = true;
-		camera_ = camera;
-	}
-	/***** GEOMETRIES ******/
-	void addGeometry(std::unique_ptr<Geometry>&& geometry) {
-		geometries_.push_back(std::move(geometry));
-	}
-	/***** LIGHTS ******/
-	void addLight(std::unique_ptr<Light>&& light) {
-		lights_.push_back(std::move(light));
-	}
-private:
-	bool hasCamera_;
-	Camera camera_;
-	std::vector<std::unique_ptr<Geometry>> geometries_;
-	std::vector<std::unique_ptr<Light>> lights_;
-};
+#include "scene.h"
 
 class RTParser {
 private:
@@ -196,7 +60,7 @@ private:
 		};
 	}
 public:
-	RTParser(GlobalScene& scene) :
+	RTParser(Scene& scene) :
 		scene_(scene),
 		transform_(Transform4d::Identity()) {}
 	void parseFile(std::string filename) {
@@ -399,7 +263,7 @@ public:
 		return s.str();
 	}
 private:
-	GlobalScene& scene_;
+	Scene& scene_;
 	Transform4d transform_;
 	Material material_;
 };
@@ -412,7 +276,7 @@ private:
 	typedef Array<Vector3uc, Dynamic, Dynamic, RowMajor> RGBImage;
 public:
 	PNGWriter(std::string filename) : filename_(filename) {}
-	void writeImage(GlobalScene::RasterImage& image) {
+	void writeImage(Scene::RasterImage& image) {
 		RGBImage rgb = convertImage(image);
 		png_image png = {0};
 		png.version = PNG_IMAGE_VERSION;
@@ -423,7 +287,7 @@ public:
 		                             rgb.data(), image.cols() * 3, NULL))
 			throw WriteException(std::string(png.message));
 	}
-	RGBImage convertImage(GlobalScene::RasterImage& image) {
+	RGBImage convertImage(Scene::RasterImage& image) {
 		RGBImage rgb(image.rows(), image.cols());
 		for (int i = 0; i < image.size(); i++)
 			rgb(i) = (image(i).cwiseMin(1).cwiseMax(0) * 255.0).cast<uint8_t>();
@@ -446,7 +310,7 @@ int main(int argc, char *argv[]) {
 		std::remove(outputFilename.c_str());
 	}
 	// read input
-	GlobalScene scene;
+	Scene scene;
 	for (std::string inputFilename : programOptions.inputFilenames_) {
 		RTParser parser(scene);
 		try {
@@ -461,7 +325,7 @@ int main(int argc, char *argv[]) {
 		return 1;
 	}
 	// render scene
-	GlobalScene::RasterImage image(programOptions.renderHeight_,
+	Scene::RasterImage image(programOptions.renderHeight_,
 	                               programOptions.renderWidth_);
 	scene.renderScene(image);
 	// write output
