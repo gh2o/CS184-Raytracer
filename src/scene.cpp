@@ -91,7 +91,7 @@ bool Scene::castRay(Ray castedRay, double* targetDistance, Geometry** targetGeom
 	for (auto& pointer : geometries_) {
 		Geometry& testGeometry = *pointer;
 		Vector4d testIntersection, testNormal;
-		if (!testGeometry.calculateIntersectionNormal(castedRay, testIntersection, testNormal))
+		if (!testGeometry.calculateIntersectionNormal(castedRay, testIntersection, testNormal, false))
 			continue;
 		// check if closest
 		double testDistance = (testIntersection - castedRay.origin()).norm();

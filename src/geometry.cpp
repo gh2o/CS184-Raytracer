@@ -1,13 +1,14 @@
 #include "geometry.h"
 #include "util.h"
 
-bool Geometry::calculateIntersectionNormal(Ray inputRay, Vector4d& intersectionPt, Vector4d& normalDirection) {
+bool Geometry::calculateIntersectionNormal(Ray inputRay, Vector4d& intersectionPt, Vector4d& normalDirection,
+		bool reverseNormals) {
 	Matrix4d fwdTransform = transform_.matrix();
 	Matrix4d invTransform = transform_.inverse().matrix();
 	Ray transformedRay(invTransform * inputRay.origin(), invTransform * inputRay.direction());
 	Vector4d transformedIntersectionPt, transformedNormalDirection;
 	bool hasIntersection = calculateIntNormInObjSpace(transformedRay, transformedIntersectionPt, 
-		transformedNormalDirection);
+		transformedNormalDirection, reverseNormals);
 	if (!hasIntersection) {
 		return false;
 	}
@@ -20,25 +21,30 @@ bool Geometry::calculateIntersectionNormal(Ray inputRay, Vector4d& intersectionP
 	return true;
 }
 
-bool Sphere::calculateIntNormInObjSpace(Ray inputRay, Vector4d& intersectionPt, Vector4d& normalDirection) {
+bool Sphere::calculateIntNormInObjSpace(Ray inputRay, Vector4d& intersectionPt, Vector4d& normalDirection,
+		bool reverseNormals) {
+	// always assume ray coming from outside of sphere
 	Vector4d originCenterDiff = inputRay.origin() - center_;
 	double a = inputRay.direction().dot(inputRay.direction());
 	double b = 2 * inputRay.direction().dot(originCenterDiff);
 	double c = originCenterDiff.dot(originCenterDiff) - radius_*radius_;
 	double discriminant = b*b - 4*a*c;
-	if (discriminant < 0) {
+	double result;
+	if (discriminant < 0)
 		return false;
-	}
-	double result = (-b - sqrt(discriminant)) / (2*a);
-	if (result < 0) {
+	if (reverseNormals)
+		result = (-b + sqrt(discriminant)) / (2 * a);
+	else
+		result = (-b - sqrt(discriminant)) / (2 * a);
+	if (result < 0)
 		return false;
-	}
 	intersectionPt = inputRay.origin() + result * inputRay.direction();
 	normalDirection = intersectionPt - center_;
 	return true;
 }
 
-bool Mesh::calculateIntNormInObjSpace(Ray inputRay, Vector4d& intersectionPt, Vector4d& normalDirection) {
+bool Mesh::calculateIntNormInObjSpace(Ray inputRay, Vector4d& intersectionPt, Vector4d& normalDirection,
+		bool reverseNormals) {
 	bool closestExists = false;
 	double closestDist = std::numeric_limits<double>::infinity();
 	for (Face& face : faces_) {
@@ -69,7 +75,8 @@ bool Mesh::calculateIntNormInObjSpace(Ray inputRay, Vector4d& intersectionPt, Ve
 			(1.0 - a - b) * face.normals_[0] +
 			a * face.normals_[1] +
 			b * face.normals_[2];
-		if (testNormal.dot(inputRay.direction()) >= 0)
+		bool hitsFront = testNormal.dot(inputRay.direction()) < 0;
+		if (!hitsFront ^ reverseNormals)
 			continue; // normal should be opposite of ray direction
 		// update closest
 		closestExists = true;
