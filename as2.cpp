@@ -277,6 +277,7 @@ public:
 		}
 		intersectionPt = fwdTransform * transformedIntersectionPt;
 		normalDirection = invTransform.transpose() * transformedNormalDirection;
+		normalDirection(3) = 0; // translation part of matrix introduces residue
 		if (fwdTransform.determinant() < 0) {
 			normalDirection = -normalDirection;
 		}
