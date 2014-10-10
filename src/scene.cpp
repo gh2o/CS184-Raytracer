@@ -1,8 +1,12 @@
 #include "scene.h"
 #include "options.h"
 
-void Scene::renderScene(RasterImage& output) {
+static void dummyProgressHandler(int complete, int total) {}
+
+void Scene::renderScene(RasterImage& output, ProgressHandler phandler) {
+	phandler || (phandler = dummyProgressHandler);
 	for (int r = 0; r < output.rows(); r++) {
+		phandler(r * output.cols(), output.size());
 		for (int c = 0; c < output.cols(); c++) {
 			double row = (r + 0.5) / output.rows();
 			double col = (c + 0.5) / output.cols();
@@ -17,6 +21,7 @@ void Scene::renderScene(RasterImage& output) {
 			output(r,c) = traceRay(viewingRay, programOptions.bounceDepth_);
 		}
 	}
+	phandler(output.size(), output.size());
 	if (programOptions.intersectionOnly_) {
 		double maxBrightness = std::numeric_limits<double>::min();
 		for (int r = 0; r < output.rows(); r++)

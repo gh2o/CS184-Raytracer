@@ -9,10 +9,11 @@
 class Scene {
 public:
 	typedef Array<Color3d, Dynamic, Dynamic, RowMajor> RasterImage;
+	typedef void (*ProgressHandler)(int complete, int total);
 public:
 	Scene() :
 		hasCamera_(false) {}
-	void renderScene(RasterImage& output);
+	void renderScene(RasterImage& output, ProgressHandler phandler = nullptr);
 	Color3d traceRay(Ray viewingRay, int bounceDepth);
 	bool castRay(Ray castedRay, double* targetDistance, Geometry** targetGeometry,
 			Vector4d* targetIntersection, Vector4d* targetNormal, bool reverseNormals = false);
