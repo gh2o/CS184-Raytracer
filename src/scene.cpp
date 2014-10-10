@@ -6,8 +6,8 @@ static void dummyProgressHandler(int complete, int total) {}
 void Scene::renderScene(RasterImage& output, ProgressHandler phandler) {
 	phandler || (phandler = dummyProgressHandler);
 	for (int r = 0; r < output.rows(); r++) {
-		phandler(r * output.cols(), output.size());
 		for (int c = 0; c < output.cols(); c++) {
+			phandler(r * output.cols() + c, output.size());
 			double row = (r + 0.5) / output.rows();
 			double col = (c + 0.5) / output.cols();
 			Vector4d pointOnImagePlane =
