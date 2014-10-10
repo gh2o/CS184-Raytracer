@@ -78,36 +78,41 @@ void RTParser::parseFile(std::string filename) {
 		if (!extractToken(ss, lineno).empty()) {
 			ParseException::showWarning("extra parameters found", lineno);
 		}
-		auto cvec = [&](int offset){
+		auto cvec = [&](int offset) -> Color3d {
 			return Color3d(&params[offset]);
+		};
+		auto tvec = [&](int offset) -> Vector3d {
+			return Vector3d(&params[offset]);
 		};
 		auto hvec = [&](int offset) -> Vector4d {
 			return Vector3d(&params[offset]).homogeneous();
 		};
-		auto dvec = [&](int offset) {
+		auto dvec = [&](int offset) -> Vector4d {
 			Vector3d c(&params[offset]);
 			if (c.isZero())
 				throw ParseException("zero direction specified", lineno);
 			return Util::vec4dFrom3d(c.normalized());
 		};
-		Vector3d fvec = cvec(0);
 		switch (ltype.type_) {
 			case LINE_TYPE_TRANSFORM_IDENTITY:
 				transform_.setIdentity();
 				break;
 			case LINE_TYPE_TRANSFORM_TRANSLATE:
-				transform_.pretranslate(fvec);
+				transform_.pretranslate(tvec(0));
 				break;
 			case LINE_TYPE_TRANSFORM_SCALE:
-				transform_.prescale(fvec);
+				transform_.prescale(tvec(0));
 				break;
 			case LINE_TYPE_TRANSFORM_ROTATE:
-				if (!fvec.isZero())
+			{
+				Vector3d rvec = tvec(0);
+				if (!rvec.isZero())
 					transform_.prerotate(AngleAxis<double>(
-						fvec.norm() * (2 * M_PI / 360.0),
-						fvec.normalized()
+						rvec.norm() * (2 * M_PI / 360.0),
+						rvec.normalized()
 					));
 				break;
+			}
 			case LINE_TYPE_MATERIAL:
 				material_.ambientColor_ = cvec(0);
 				material_.diffuseColor_ = cvec(3);
