@@ -14,7 +14,7 @@ bool Geometry::calculateIntersectionNormal(Ray inputRay, Vector4d& intersectionP
 	}
 	intersectionPt = fwdTransform * transformedIntersectionPt;
 	normalDirection = invTransform.transpose() * transformedNormalDirection;
-	normalDirection(3) = 0; // translation part of matrix introduces residue
+	normalDirection.w() = 0; // translation part of matrix introduces residue
 	if (fwdTransform.determinant() < 0) {
 		normalDirection = -normalDirection;
 	}

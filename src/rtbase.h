@@ -11,14 +11,14 @@ public:
 	Vector4d origin() { return origin_; }
 	Vector4d direction() { return direction_; }
 	void origin(const Vector4d& ori) {
-		if (ori(3) == 0)
+		if (ori.w() == 0)
 			throw MathException("ray origin is a direction vector");
 		origin_ = ori;
 	}
 	void direction(const Vector4d& dir) {
 		if (dir.isZero())
 			throw MathException("ray has no direction");
-		if (dir(3) != 0)
+		if (dir.w() != 0)
 			throw MathException("ray direction is a point vector");
 		direction_ = dir.normalized();
 	}
