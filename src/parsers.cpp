@@ -92,22 +92,10 @@ void RTIParser::parseFile(std::string filename) {
 		}
 		LineType ltype = iter->second;
 		std::vector<double> params;
-		for (int i = 0; i < ltype.pmax_; i++) {
+		while (true) {
 			std::string token = extractToken(ss, lineno);
-			if (token.empty()) {
-				if (i < ltype.pmin_) {
-					std::ostringstream es;
-					es << stype
-						<< " requires "
-						<< (ltype.pmin_ == ltype.pmax_ ? "" : "at least ")
-						<< ltype.pmin_
-						<< " parameters";
-					throw ParseException(es.str(), lineno);
-				} else {
-					params.push_back(0.0);
-					continue;
-				}
-			}
+			if (token.empty())
+				break;
 			try {
 				params.push_back(std::stod(token));
 			} catch (std::logic_error& e) {
@@ -116,8 +104,19 @@ void RTIParser::parseFile(std::string filename) {
 				throw ParseException(es.str(), lineno);
 			}
 		}
-		if (!extractToken(ss, lineno).empty()) {
+		if (params.size() < ltype.pmin_) {
+			std::ostringstream es;
+			es << stype
+				<< " requires "
+				<< (ltype.pmin_ == ltype.pmax_ ? "" : "at least ")
+				<< ltype.pmin_
+				<< " parameters";
+			throw ParseException(es.str(), lineno);
+		} else if (params.size() > ltype.pmax_) {
 			ParseException::showWarning("extra parameters found", lineno);
+		}
+		while (params.size() < ltype.pmax_) {
+			params.push_back(0.0);
 		}
 		auto cvec = [&](int offset) -> Color3d {
 			return Color3d(&params[offset]);
