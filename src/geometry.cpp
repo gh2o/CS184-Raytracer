@@ -93,7 +93,7 @@ void Mesh::addTriangle(const std::array<Vector4d,3>& points) {
 	const Vector4d& v2 = points[2];
 	Vector4d n = Util::cross(v1 - v0, v2 - v0).normalized();
 	Vector4d ep = std::numeric_limits<double>::epsilon()
-		* std::max({v0.sum(), v1.sum(), v2.sum()}) * n;
+		* (v0 + v1 + v2).norm() / 3 * n;
 	for (int s = -1; s <= 1; s += 2) {
 		Face face;
 		face.points_ = points;
