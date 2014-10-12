@@ -33,8 +33,9 @@ static std::string extractToken(std::istream& stream, int lineno) {
 		stream.get();
 	}
 	// read string value
-	std::ostringstream s;
-	if (stream.peek() == '"') {
+	bool quoted = stream.peek() == '"';
+	std::ostringstream os;
+	if (quoted) {
 		stream.get();
 		while (true) {
 			c = stream.get();
@@ -42,18 +43,24 @@ static std::string extractToken(std::istream& stream, int lineno) {
 				throw ParseException("unclosed quotes", lineno);
 			if (c == '"')
 				break;
-			s.put(c);
+			os.put(c);
 		}
 	} else {
 		while (true) {
 			c = stream.get();
 			if (c == EOF || std::isspace(c))
 				break;
-			s.put(c);
+			os.put(c);
 		}
 	}
+	// ignore comments
+	std::string str = os.str();
+	if (!quoted && !str.empty() && str[0] == '#') {
+		str.clear();
+		stream.ignore(std::numeric_limits<std::streamsize>::max());
+	}
 	// return it
-	return s.str();
+	return str;
 }
 void RTIParser::parseFile(std::string filename) {
 	std::ifstream stream(filename);
