@@ -62,6 +62,26 @@ static std::string extractToken(std::istream& stream, int lineno) {
 	// return it
 	return str;
 }
+
+static std::vector<std::string> extractTokens(std::istream& stream, int lineno) {
+	std::vector<std::string> tokens;
+	while (true) {
+		std::string token = extractToken(stream, lineno);
+		if (token.empty())
+			break;
+		tokens.push_back(token);
+	}
+	return tokens;
+}
+
+static std::vector<double> extractDoubles(std::istream& stream, int lineno) {
+	std::vector<std::string> tokens = extractTokens(stream, lineno);
+	std::vector<double> doubles(tokens.size());
+	std::transform(tokens.begin(), tokens.end(), doubles.begin(),
+		[](const std::string& s){ return std::stod(s); });
+	return doubles;
+}
+
 void RTIParser::parseFile(std::string filename) {
 	std::ifstream stream(filename);
 	if (!stream)
@@ -91,19 +111,7 @@ void RTIParser::parseFile(std::string filename) {
 			continue;
 		}
 		LineType ltype = iter->second;
-		std::vector<double> params;
-		while (true) {
-			std::string token = extractToken(ss, lineno);
-			if (token.empty())
-				break;
-			try {
-				params.push_back(std::stod(token));
-			} catch (std::logic_error& e) {
-				std::ostringstream es;
-				es << "invalid number " << token;
-				throw ParseException(es.str(), lineno);
-			}
-		}
+		std::vector<double> params = extractDoubles(ss, lineno);
 		if (params.size() < ltype.pmin_) {
 			std::ostringstream es;
 			es << stype
