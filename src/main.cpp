@@ -52,7 +52,7 @@ int main(int argc, char *argv[]) {
 	// read input
 	Scene scene;
 	for (std::string inputFilename : programOptions.inputFilenames_) {
-		RTParser parser(scene);
+		RTIParser parser(scene);
 		try {
 			parser.parseFile(inputFilename);
 		} catch (const ParseException& e) {

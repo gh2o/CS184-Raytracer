@@ -2,7 +2,7 @@
 #include "parsers.h"
 #include "util.h"
 
-std::map<std::string, RTParser::LineType> RTParser::initializeLineTypes() {
+std::map<std::string, RTIParser::LineType> RTIParser::initializeLineTypes() {
 	return {
 		{"cam", {LINE_TYPE_CAMERA, 15}},
 		{"sph", {LINE_TYPE_SPHERE, 4}},
@@ -18,10 +18,10 @@ std::map<std::string, RTParser::LineType> RTParser::initializeLineTypes() {
 	};
 }
 
-const std::map<std::string, RTParser::LineType> RTParser::LINE_TYPES =
-	RTParser::initializeLineTypes();
+const std::map<std::string, RTIParser::LineType> RTIParser::LINE_TYPES =
+	RTIParser::initializeLineTypes();
 
-void RTParser::parseFile(std::string filename) {
+void RTIParser::parseFile(std::string filename) {
 	std::ifstream stream(filename);
 	if (!stream)
 		throw ParseException("file not found: " + filename);
@@ -192,7 +192,7 @@ void RTParser::parseFile(std::string filename) {
 	}
 }
 
-std::string RTParser::extractToken(std::istream& stream, int lineno) {
+std::string RTIParser::extractToken(std::istream& stream, int lineno) {
 	// skip beginning spaces
 	int c;
 	while (true) {

@@ -2,7 +2,7 @@
 #include <map>
 #include "scene.h"
 
-class RTParser {
+class RTIParser {
 private:
 	enum LineTypeValue {
 		LINE_TYPE_CAMERA,
@@ -30,7 +30,7 @@ private:
 	static const std::map<std::string, LineType> LINE_TYPES;
 	static std::map<std::string, LineType> initializeLineTypes();
 public:
-	RTParser(Scene& scene) :
+	RTIParser(Scene& scene) :
 		scene_(scene),
 		transform_(Transform4d::Identity()) {}
 	void parseFile(std::string filename);
