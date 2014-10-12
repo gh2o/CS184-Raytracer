@@ -21,6 +21,40 @@ std::map<std::string, RTIParser::LineType> RTIParser::initializeLineTypes() {
 const std::map<std::string, RTIParser::LineType> RTIParser::LINE_TYPES =
 	RTIParser::initializeLineTypes();
 
+static std::string extractToken(std::istream& stream, int lineno) {
+	// skip beginning spaces
+	int c;
+	while (true) {
+		c = stream.peek();
+		if (c == EOF)
+			return std::string();
+		if (!std::isspace(c))
+			break;
+		stream.get();
+	}
+	// read string value
+	std::ostringstream s;
+	if (stream.peek() == '"') {
+		stream.get();
+		while (true) {
+			c = stream.get();
+			if (c == EOF)
+				throw ParseException("unclosed quotes", lineno);
+			if (c == '"')
+				break;
+			s.put(c);
+		}
+	} else {
+		while (true) {
+			c = stream.get();
+			if (c == EOF || std::isspace(c))
+				break;
+			s.put(c);
+		}
+	}
+	// return it
+	return s.str();
+}
 void RTIParser::parseFile(std::string filename) {
 	std::ifstream stream(filename);
 	if (!stream)
@@ -190,39 +224,4 @@ void RTIParser::parseFile(std::string filename) {
 			}
 		}
 	}
-}
-
-std::string RTIParser::extractToken(std::istream& stream, int lineno) {
-	// skip beginning spaces
-	int c;
-	while (true) {
-		c = stream.peek();
-		if (c == EOF)
-			return std::string();
-		if (!std::isspace(c))
-			break;
-		stream.get();
-	}
-	// read string value
-	std::ostringstream s;
-	if (stream.peek() == '"') {
-		stream.get();
-		while (true) {
-			c = stream.get();
-			if (c == EOF)
-				throw ParseException("unclosed quotes", lineno);
-			if (c == '"')
-				break;
-			s.put(c);
-		}
-	} else {
-		while (true) {
-			c = stream.get();
-			if (c == EOF || std::isspace(c))
-				break;
-			s.put(c);
-		}
-	}
-	// return it
-	return s.str();
 }

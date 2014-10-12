@@ -34,7 +34,6 @@ public:
 		scene_(scene),
 		transform_(Transform4d::Identity()) {}
 	void parseFile(std::string filename);
-	std::string extractToken(std::istream& stream, int lineno);
 private:
 	Scene& scene_;
 	Transform4d transform_;
