@@ -63,17 +63,19 @@ Color3d Scene::traceRay(Ray viewingRay, int bounceDepth) {
 			if (castRay(rayToLight, &distToOccluder, nullptr, nullptr, nullptr, shouldReverseNormals)
 					&& distToOccluder <= distToLight)
 				continue;
+			// color
+			Color3d attenuatedColor = light.colorForDistance(distToLight);
 			// diffuse
 			double diffuseIntensity = std::max(targetNormal.dot(rayToLight.direction()), 0.0);
 			resultColor += diffuseIntensity *
-				light.color_ * targetGeometry->material_.diffuseColor_;
+				attenuatedColor * targetGeometry->material_.diffuseColor_;
 			// specular
 			Vector4d reflectDirection =
 				2 * targetNormal.dot(rayToLight.direction()) * targetNormal - rayToLight.direction();
 			double specularIntensity = pow(std::max(-viewingRay.direction().dot(reflectDirection), 0.0),
 				targetGeometry->material_.specularCoefficient_ );
 			resultColor += specularIntensity *
-				light.color_ * targetGeometry->material_.specularColor_;
+				attenuatedColor * targetGeometry->material_.specularColor_;
 		}
 	}
 	// bounce!!!

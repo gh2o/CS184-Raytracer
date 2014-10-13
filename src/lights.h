@@ -4,6 +4,7 @@ class Light : public Transformable {
 public:
 	virtual double calculateDistanceToLight(const Vector4d& source) = 0;
 	virtual Vector4d calculateDirectionToLight(const Vector4d& source) = 0;
+	virtual Color3d colorForDistance(double dist) { return color_; }
 	Ray calculateRayToLight(const Vector4d& source) {
 		return Ray(source, calculateDirectionToLight(source));
 	}
@@ -19,14 +20,12 @@ public:
 	Vector4d calculateDirectionToLight(const Vector4d& source) {
 		return point_ - source;
 	}
+	Color3d colorForDistance(double dist) {
+		return pow(dist, -falloffExponent_) * color_;
+	}
 public:
-	enum Falloff {
-		FALLOFF_NONE,
-		FALLOFF_LINEAR,
-		FALLOFF_QUADRATIC,
-	};
 	Vector4d point_;
-	Falloff falloff_;
+	double falloffExponent_;
 };
 
 class DirectionalLight : public Light {

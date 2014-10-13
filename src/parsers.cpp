@@ -217,21 +217,11 @@ void RTIParser::parseFile(std::string filename) {
 			}
 			case LINE_TYPE_POINT_LIGHT:
 			{
-				PointLight::Falloff falloff = PointLight::FALLOFF_NONE;
-				switch ((int)params[6]) {
-					case 0: falloff = PointLight::FALLOFF_NONE; break;
-					case 1: falloff = PointLight::FALLOFF_LINEAR; break;
-					case 2: falloff = PointLight::FALLOFF_QUADRATIC; break;
-					default:
-						ParseException::showWarning(
-							"invalid falloff type", lineno);
-						break;
-				}
 				PointLight* light = new PointLight();
 				light->forwardTransform(transform_);
 				light->point_ = hvec(0);
 				light->color_ = cvec(3);
-				light->falloff_ = falloff;
+				light->falloffExponent_ = params[6];
 				scene_.addLight(std::unique_ptr<Light>(light));
 				break;
 			}
