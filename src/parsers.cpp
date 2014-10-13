@@ -296,7 +296,7 @@ void OBJParser::parseFile(std::string filename) {
 					if (nextDelimiterStart == std::string::npos)
 						nextDelimiterStart = s.length();
 					std::string currentPart = s.substr(
-								prevDelimiterEnd, nextDelimiterStart);
+								prevDelimiterEnd, nextDelimiterStart - prevDelimiterEnd);
 					prevDelimiterEnd = nextDelimiterStart + 1;
 					int indexValue = kUnknownIndex;
 					if (!currentPart.empty()) {
