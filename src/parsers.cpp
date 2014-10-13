@@ -107,8 +107,13 @@ void RTIParser::parseFile(std::string filename) {
 			std::string filename = extractToken(ss, lineno);
 			if (filename.empty())
 				throw ParseException("obj requires a filename", lineno);
-			// TODO
-			abort();
+			// parse the obj file
+			Mesh* mesh = new Mesh();
+			mesh->transform_ = transform_;
+			mesh->material_ = material_;
+			OBJParser objp(*mesh);
+			objp.parseFile(filename);
+			scene_.addGeometry(std::unique_ptr<Geometry>(mesh));
 			continue;
 		}
 		auto iter = LINE_TYPES.find(stype);
@@ -244,6 +249,127 @@ void RTIParser::parseFile(std::string filename) {
 				scene_.addLight(std::unique_ptr<Light>(light));
 				break;
 			}
+		}
+	}
+}
+
+void OBJParser::parseFile(std::string filename) {
+	std::ifstream stream(filename);
+	if (!stream)
+		throw ParseException("file not found: " + filename);
+	std::vector<Vector4d> vertices;
+	std::vector<Vector4d> normals;
+	vertices.emplace_back(); // 1-indexed
+	normals.emplace_back();  // 1-indexed
+	int lineno = 1;
+	for (std::string line; std::getline(stream, line); lineno++) {
+		std::istringstream ss(line);
+		std::string ltype = extractToken(ss, lineno);
+		if (ltype.empty()) {
+			// blank line
+			continue;
+		}
+		if (ltype == "f") {
+			// face
+			struct OBJPoint {
+				union {
+					struct { int vertexIndex_, textureIndex_, normalIndex_; };
+					int allIndices_[3];
+				};
+				Vector4d *vertexPtr_, *normalPtr_;
+			};
+			auto tokens = extractTokens(ss, lineno);
+			if (tokens.size() < 3)
+				throw ParseException("f requires at least 3 vertices", lineno);
+			std::vector<OBJPoint> points(tokens.size());
+			std::transform(tokens.begin(), tokens.end(), points.begin(),
+					[&](const std::string& s) {
+				OBJPoint p;
+				const int kUnknownIndex = 0;
+				int indexCount = 0;
+				int prevDelimiterEnd = 0;
+				while (indexCount < 3 && prevDelimiterEnd < s.length()) {
+					int nextDelimiterStart = s.find("/", prevDelimiterEnd);
+					if (nextDelimiterStart == std::string::npos)
+						nextDelimiterStart = s.length();
+					std::string currentPart = s.substr(
+								prevDelimiterEnd, nextDelimiterStart);
+					prevDelimiterEnd = nextDelimiterStart + 1;
+					int indexValue = kUnknownIndex;
+					if (!currentPart.empty()) {
+						try {
+							indexValue = std::stoi(currentPart);
+						} catch (std::logic_error& e) {
+							std::ostringstream os;
+							os << "invalid integer " << currentPart;
+							throw ParseException(os.str(), lineno);
+						}
+						if (indexValue <= 0)
+							throw ParseException("index must be positive", lineno);
+					}
+					p.allIndices_[indexCount++] = indexValue;
+				}
+				while (indexCount < 3)
+					p.allIndices_[indexCount++] = kUnknownIndex;
+				// assign vertex
+				if (p.vertexIndex_ == kUnknownIndex)
+					throw ParseException("vertex index is required", lineno);
+				else if (p.vertexIndex_ < vertices.size())
+					p.vertexPtr_ = &vertices[p.vertexIndex_];
+				else
+					throw ParseException("vertex index out of range", lineno);
+				// assign normal
+				if (p.normalIndex_ == kUnknownIndex)
+					p.normalPtr_ = nullptr;
+				else if (p.normalIndex_ < normals.size())
+					p.normalPtr_ = &normals[p.normalIndex_];
+				else
+					throw ParseException("normal index out of range", lineno);
+				// return the point
+				return p;
+			});
+			// add triangles
+			OBJPoint& basePoint = points[0];
+			for (auto it = points.begin() + 1; it < points.end() - 1; it++) {
+				OBJPoint& firstPoint = *it;
+				OBJPoint& secondPoint = *(it + 1);
+				Vector4d firstVec = *firstPoint.vertexPtr_ - *basePoint.vertexPtr_;
+				Vector4d secondVec = *secondPoint.vertexPtr_ - *basePoint.vertexPtr_;
+				Vector4d calculatedNormal = Util::cross(firstVec, secondVec);
+				if (calculatedNormal.isZero())
+					throw ParseException("degenerate face", lineno);
+				calculatedNormal.normalize();
+				// add face to mesh
+				Mesh::Face triFace;
+				OBJPoint *triPoints[3] = { &basePoint, &firstPoint, &secondPoint };
+				for (int i = 0; i < 3; i++) {
+					triFace.points_[i] = *triPoints[i]->vertexPtr_;
+					triFace.normals_[i] = triPoints[i]->normalPtr_ ?
+						*triPoints[i]->normalPtr_ : calculatedNormal;
+				}
+				mesh_.faces_.push_back(triFace);
+			}
+		} else if (ltype == "v") {
+			// vertex
+			auto params = extractDoubles(ss, lineno);
+			if (params.size() != 3 && params.size() != 4)
+				throw ParseException("v requires 3 or 4 parameters", lineno);
+			params.push_back(1.0); // w
+			Vector4d vtx(&params[0]);
+			if (vtx.w() == 0)
+				throw ParseException("v must be a point vector", lineno);
+			vertices.push_back(vtx);
+		} else if (ltype == "vn") {
+			// vertex normal
+			auto params = extractDoubles(ss, lineno);
+			if (params.size() != 3)
+				throw ParseException("vn requires 3 parameters", lineno);
+			params.push_back(0.0);
+			Vector4d nrm(&params[0]);
+			normals.push_back(nrm);
+		} else {
+			ParseException::showWarning("unknown obj line type " + ltype,
+					lineno);
 		}
 	}
 }

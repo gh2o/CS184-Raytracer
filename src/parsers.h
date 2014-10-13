@@ -39,3 +39,12 @@ private:
 	Transform4d transform_;
 	Material material_;
 };
+
+class OBJParser {
+public:
+	OBJParser(Mesh& mesh) :
+		mesh_(mesh) {}
+	void parseFile(std::string filename);
+private:
+	Mesh& mesh_;
+};
