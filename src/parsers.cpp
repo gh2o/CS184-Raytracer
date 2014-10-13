@@ -112,7 +112,7 @@ void RTIParser::parseFile(std::string filename) {
 				objfname = Util::dirname(filename) + "/" + objfname;
 			// parse the obj file
 			Mesh* mesh = new Mesh();
-			mesh->transform_ = transform_;
+			mesh->forwardTransform(transform_);
 			mesh->material_ = material_;
 			OBJParser objp(*mesh);
 			objp.parseFile(objfname);
@@ -187,7 +187,7 @@ void RTIParser::parseFile(std::string filename) {
 			case LINE_TYPE_CAMERA:
 			{
 				Camera camera;
-				camera.transform_ = transform_;
+				camera.forwardTransform(transform_);
 				camera.eyePoint_ = hvec(0);
 				camera.lowerLeftPoint_ = hvec(3);
 				camera.lowerRightPoint_ = hvec(6);
@@ -199,7 +199,7 @@ void RTIParser::parseFile(std::string filename) {
 			case LINE_TYPE_SPHERE:
 			{
 				Sphere* sphere = new Sphere();
-				sphere->transform_ = transform_;
+				sphere->forwardTransform(transform_);
 				sphere->material_ = material_;
 				sphere->center_ = hvec(0);
 				sphere->radius_ = params[3];
@@ -209,7 +209,7 @@ void RTIParser::parseFile(std::string filename) {
 			case LINE_TYPE_TRIANGLE:
 			{
 				Mesh* mesh = new Mesh();
-				mesh->transform_ = transform_;
+				mesh->forwardTransform(transform_);
 				mesh->material_ = material_;
 				mesh->addTriangle({{ hvec(0), hvec(3), hvec(6) }});
 				scene_.addGeometry(std::unique_ptr<Geometry>(mesh));
@@ -228,7 +228,7 @@ void RTIParser::parseFile(std::string filename) {
 						break;
 				}
 				PointLight* light = new PointLight();
-				light->transform_ = transform_;
+				light->forwardTransform(transform_);
 				light->point_ = hvec(0);
 				light->color_ = cvec(3);
 				light->falloff_ = falloff;
@@ -238,7 +238,7 @@ void RTIParser::parseFile(std::string filename) {
 			case LINE_TYPE_DIRECTIONAL_LIGHT:
 			{
 				DirectionalLight* light = new DirectionalLight();
-				light->transform_ = transform_;
+				light->forwardTransform(transform_);
 				light->direction_ = dvec(0);
 				light->color_ = cvec(3);
 				scene_.addLight(std::unique_ptr<Light>(light));
@@ -247,7 +247,7 @@ void RTIParser::parseFile(std::string filename) {
 			case LINE_TYPE_AMBIENT_LIGHT:
 			{
 				AmbientLight* light = new AmbientLight();
-				light->transform_ = transform_;
+				light->forwardTransform(transform_);
 				light->color_ = cvec(0);
 				scene_.addLight(std::unique_ptr<Light>(light));
 				break;

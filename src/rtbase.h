@@ -8,8 +8,8 @@ public:
 		origin(ori);
 		direction(dir);
 	}
-	Vector4d origin() { return origin_; }
-	Vector4d direction() { return direction_; }
+	const Vector4d& origin() { return origin_; }
+	const Vector4d& direction() { return direction_; }
 	void origin(const Vector4d& ori) {
 		if (ori.w() == 0)
 			throw MathException("ray origin is a direction vector");
@@ -38,7 +38,30 @@ public:
 
 class Transformable {
 public:
-	Transform4d transform_;
+	Transformable() :
+		forwardTransform_(Transform4d::Identity()),
+		inverseTransform_(Transform4d::Identity()) {}
+	const Transform4d& forwardTransform() { return forwardTransform_; }
+	const Transform4d& inverseTransform() { return inverseTransform_; }
+	double transformDeterminant() { return transformDeterminant_; }
+	void forwardTransform(const Transform4d& xf) {
+		forwardTransform_ = xf;
+		inverseTransform_ = xf.inverse();
+		updateDeterminant();
+	}
+	void inverseTransform(const Transform4d& xf) {
+		forwardTransform_ = xf.inverse();
+		inverseTransform_ = xf;
+		updateDeterminant();
+	}
+private:
+	void updateDeterminant() {
+		transformDeterminant_ = forwardTransform_.matrix().determinant();
+	}
+private:
+	Transform4d forwardTransform_;
+	Transform4d inverseTransform_;
+	double transformDeterminant_;
 };
 
 class Camera : public Transformable {

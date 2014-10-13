@@ -3,21 +3,17 @@
 
 bool Geometry::calculateIntersectionNormal(Ray inputRay, Vector4d& intersectionPt, Vector4d& normalDirection,
 		bool reverseNormals) {
-	Matrix4d fwdTransform = transform_.matrix();
-	Matrix4d invTransform = transform_.inverse().matrix();
-	Ray transformedRay(invTransform * inputRay.origin(), invTransform * inputRay.direction());
+	Ray transformedRay(inverseTransform() * inputRay.origin(), inverseTransform() * inputRay.direction());
 	Vector4d transformedIntersectionPt, transformedNormalDirection;
 	bool hasIntersection = calculateIntNormInObjSpace(transformedRay, transformedIntersectionPt, 
 		transformedNormalDirection, reverseNormals);
-	if (!hasIntersection) {
+	if (!hasIntersection)
 		return false;
-	}
-	intersectionPt = fwdTransform * transformedIntersectionPt;
-	normalDirection = invTransform.transpose() * transformedNormalDirection;
+	intersectionPt = forwardTransform() * transformedIntersectionPt;
+	normalDirection = inverseTransform().matrix().transpose() * transformedNormalDirection;
 	normalDirection.w() = 0; // translation part of matrix introduces residue
-	if (fwdTransform.determinant() < 0) {
+	if (transformDeterminant() < 0)
 		normalDirection = -normalDirection;
-	}
 	return true;
 }
 
