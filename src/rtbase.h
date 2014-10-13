@@ -38,9 +38,6 @@ public:
 
 class Transformable {
 public:
-	Transformable() :
-		forwardTransform_(Transform4d::Identity()),
-		inverseTransform_(Transform4d::Identity()) {}
 	const Transform4d& forwardTransform() { return forwardTransform_; }
 	const Transform4d& inverseTransform() { return inverseTransform_; }
 	double transformDeterminant() { return transformDeterminant_; }
@@ -59,8 +56,8 @@ private:
 		transformDeterminant_ = forwardTransform_.matrix().determinant();
 	}
 private:
-	Transform4d forwardTransform_;
-	Transform4d inverseTransform_;
+	Transform4d forwardTransform_ = Transform4d::Identity();
+	Transform4d inverseTransform_ = Transform4d::Identity();
 	double transformDeterminant_;
 };
 

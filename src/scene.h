@@ -11,8 +11,6 @@ public:
 	typedef Array<Color3d, Dynamic, Dynamic, RowMajor> RasterImage;
 	typedef void (*ProgressHandler)(int complete, int total);
 public:
-	Scene() :
-		hasCamera_(false) {}
 	void renderScene(RasterImage& output, ProgressHandler phandler = nullptr);
 	Color3d traceRay(Ray viewingRay, int bounceDepth);
 	bool castRay(Ray castedRay, double* targetDistance, Geometry** targetGeometry,
@@ -34,7 +32,7 @@ public:
 		lights_.push_back(std::move(light));
 	}
 private:
-	bool hasCamera_;
+	bool hasCamera_ = false;
 	Camera camera_;
 	std::vector<std::unique_ptr<Geometry>> geometries_;
 	std::vector<std::unique_ptr<Light>> lights_;

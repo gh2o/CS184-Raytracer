@@ -31,12 +31,11 @@ private:
 	static std::map<std::string, LineType> initializeLineTypes();
 public:
 	RTIParser(Scene& scene) :
-		scene_(scene),
-		transform_(Transform4d::Identity()) {}
+		scene_(scene) {}
 	void parseFile(std::string filename);
 private:
 	Scene& scene_;
-	Transform4d transform_;
+	Transform4d transform_ = Transform4d::Identity();
 	Material material_;
 };
 
