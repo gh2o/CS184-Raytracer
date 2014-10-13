@@ -104,15 +104,18 @@ void RTIParser::parseFile(std::string filename) {
 		}
 		if (stype == "obj") {
 			// obj needs special handling
-			std::string filename = extractToken(ss, lineno);
-			if (filename.empty())
+			std::string objfname = extractToken(ss, lineno);
+			if (objfname.empty())
 				throw ParseException("obj requires a filename", lineno);
+			// convert relative path to .rti relative path
+			if (objfname[0] != '/')
+				objfname = Util::dirname(filename) + "/" + objfname;
 			// parse the obj file
 			Mesh* mesh = new Mesh();
 			mesh->transform_ = transform_;
 			mesh->material_ = material_;
 			OBJParser objp(*mesh);
-			objp.parseFile(filename);
+			objp.parseFile(objfname);
 			scene_.addGeometry(std::unique_ptr<Geometry>(mesh));
 			continue;
 		}
