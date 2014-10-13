@@ -78,7 +78,15 @@ static std::vector<double> extractDoubles(std::istream& stream, int lineno) {
 	std::vector<std::string> tokens = extractTokens(stream, lineno);
 	std::vector<double> doubles(tokens.size());
 	std::transform(tokens.begin(), tokens.end(), doubles.begin(),
-		[](const std::string& s){ return std::stod(s); });
+			[&](const std::string& s){
+		try {
+			return std::stod(s);
+		} catch (std::logic_error& e) {
+			std::ostringstream es;
+			es << "invalid number " << s;
+			throw ParseException(es.str(), lineno);
+		}
+	});
 	return doubles;
 }
 
