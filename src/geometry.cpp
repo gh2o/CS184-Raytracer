@@ -45,21 +45,31 @@ bool Mesh::calculateIntNormInObjSpace(Ray inputRay, Vector4d& intersectionPt, Ve
 	double closestDist = std::numeric_limits<double>::infinity();
 	for (Face& face : faces_) {
 		// base vectors for matrix
-		Vector4d va = face.points_[1] - face.points_[0];
-		Vector4d vb = face.points_[2] - face.points_[0];
-		Vector4d dir = inputRay.direction();
-		Matrix4d m;
-		m << va, vb, -dir, Vector4d(0,0,0,1);
-		if (m.determinant() == 0)
+		Vector3d va = Util::vec3dFrom4d(face.points_[1] - face.points_[0]);
+		Vector3d vb = Util::vec3dFrom4d(face.points_[2] - face.points_[0]);
+		Vector3d dir = Util::vec3dFrom4d(inputRay.direction());
+		Vector3d rhs = Util::vec3dFrom4d(inputRay.origin() - face.points_[0]);
+		Matrix3d mlower, mupper;
+		mlower << va, vb, -dir;
+		double dlower = mlower.determinant();
+		if (dlower == 0)
 			continue;
-		// solve matrix for va and vb coeffs, direction scale t
-		Vector4d sol = m.inverse() * (inputRay.origin() - face.points_[0]);
-		double a = sol(0);
-		double b = sol(1);
-		double t = sol(2);
-		// validate constraints
-		if (a < 0 || b < 0 || a + b > 1)
+		// solve for a and ensure it's in the range
+		mupper = mlower;
+		mupper.col(0) = rhs;
+		double a = mupper.determinant() / dlower;
+		if (a < 0 || a > 1)
 			continue;
+		// solve for b and ensure it's in the range
+		mupper = mlower;
+		mupper.col(1) = rhs;
+		double b = mupper.determinant() / dlower;
+		if (b < 0 || a + b > 1)
+			continue;
+		// solve for t and ensure it's positive
+		mupper = mlower;
+		mupper.col(2) = rhs;
+		double t = mupper.determinant() / dlower; // cramer's rule
 		if (t < 0)
 			continue;
 		// check if closest
@@ -77,7 +87,7 @@ bool Mesh::calculateIntNormInObjSpace(Ray inputRay, Vector4d& intersectionPt, Ve
 		// update closest
 		closestExists = true;
 		closestDist = dist;
-		intersectionPt = face.points_[0] + a * va + b * vb;
+		intersectionPt = face.points_[0] + Util::vec4dFrom3d(a * va + b * vb);
 		normalDirection = testNormal;
 	}
 	return closestExists;
