@@ -63,17 +63,32 @@ private:
 
 class Camera : public Transformable {
 public:
-	Vector4d eyePoint_;
-	Vector4d lowerLeftPoint_;
-	Vector4d lowerRightPoint_;
-	Vector4d upperLeftPoint_;
-	Vector4d upperRightPoint_;
-
-
-	Vector4d xfrmedEyePoint() { return forwardTransform() * eyePoint_; }
-	Vector4d xfrmedLowerLeftPoint() { return forwardTransform() * lowerLeftPoint_; }
-	Vector4d xfrmedLowerRightPoint() { return forwardTransform() * lowerRightPoint_; }
-	Vector4d xfrmedUpperLeftPoint() { return forwardTransform() * upperLeftPoint_; }
-	Vector4d xfrmedUpperRightPoint() { return forwardTransform() * upperRightPoint_; }
-
+	void eyePoint(const Vector4d& p)        { xfDirty_ = true; eyePoint_ = p; }
+	void lowerLeftPoint(const Vector4d& p)  { xfDirty_ = true; lowerLeftPoint_ = p; }
+	void lowerRightPoint(const Vector4d& p) { xfDirty_ = true; lowerRightPoint_ = p; }
+	void upperLeftPoint(const Vector4d& p)  { xfDirty_ = true; upperLeftPoint_ = p; }
+	void upperRightPoint(const Vector4d& p) { xfDirty_ = true; upperRightPoint_ = p; }
+	Vector4d xfEyePoint()        { updateTransformedVectors(); return xfEyePoint_; }
+	Vector4d xfLowerLeftPoint()  { updateTransformedVectors(); return xfLowerLeftPoint_; }
+	Vector4d xfLowerRightPoint() { updateTransformedVectors(); return xfLowerRightPoint_; }
+	Vector4d xfUpperLeftPoint()  { updateTransformedVectors(); return xfUpperLeftPoint_; }
+	Vector4d xfUpperRightPoint() { updateTransformedVectors(); return xfUpperRightPoint_; }
+private:
+	void updateTransformedVectors() {
+		if (xfDirty_) {
+			xfDirty_ = false;
+			xfEyePoint_        = forwardTransform() * eyePoint_;
+			xfLowerLeftPoint_  = forwardTransform() * lowerLeftPoint_;
+			xfLowerRightPoint_ = forwardTransform() * lowerRightPoint_;
+			xfUpperLeftPoint_  = forwardTransform() * upperLeftPoint_;
+			xfUpperRightPoint_ = forwardTransform() * upperRightPoint_;
+		}
+	}
+private:
+	Vector4d eyePoint_,        xfEyePoint_;
+	Vector4d lowerLeftPoint_,  xfLowerLeftPoint_;
+	Vector4d lowerRightPoint_, xfLowerRightPoint_;
+	Vector4d upperLeftPoint_,  xfUpperLeftPoint_;
+	Vector4d upperRightPoint_, xfUpperRightPoint_;
+	bool xfDirty_ = true;
 };

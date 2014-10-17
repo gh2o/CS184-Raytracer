@@ -12,12 +12,12 @@ void Scene::renderScene(RasterImage& output, ProgressHandler phandler) {
 			double col = (c + 0.5) / output.cols();
 			Vector4d pointOnImagePlane =
 				col * (
-					row *         camera_.xfrmedLowerRightPoint() +
-					(1.0 - row) * camera_.xfrmedUpperRightPoint()) +
+					row *         camera_.xfLowerRightPoint() +
+					(1.0 - row) * camera_.xfUpperRightPoint()) +
 				(1.0 - col) * (
-					row         * camera_.xfrmedLowerLeftPoint() +
-					(1.0 - row) * camera_.xfrmedUpperLeftPoint());
-			Ray viewingRay(camera_.xfrmedEyePoint(), pointOnImagePlane - camera_.xfrmedEyePoint());
+					row         * camera_.xfLowerLeftPoint() +
+					(1.0 - row) * camera_.xfUpperLeftPoint());
+			Ray viewingRay(camera_.xfEyePoint(), pointOnImagePlane - camera_.xfEyePoint());
 			output(r,c) = traceRay(viewingRay, programOptions.bounceDepth_);
 		}
 	}

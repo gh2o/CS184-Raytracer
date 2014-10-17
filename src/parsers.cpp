@@ -188,11 +188,11 @@ void RTIParser::parseFile(std::string filename) {
 			{
 				Camera camera;
 				camera.forwardTransform(transform_);
-				camera.eyePoint_ = hvec(0);
-				camera.lowerLeftPoint_ = hvec(3);
-				camera.lowerRightPoint_ = hvec(6);
-				camera.upperLeftPoint_ = hvec(9);
-				camera.upperRightPoint_ = hvec(12);
+				camera.eyePoint(hvec(0));
+				camera.lowerLeftPoint(hvec(3));
+				camera.lowerRightPoint(hvec(6));
+				camera.upperLeftPoint(hvec(9));
+				camera.upperRightPoint(hvec(12));
 				scene_.camera(camera);
 				break;
 			}
