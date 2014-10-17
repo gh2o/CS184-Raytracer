@@ -68,4 +68,12 @@ public:
 	Vector4d lowerRightPoint_;
 	Vector4d upperLeftPoint_;
 	Vector4d upperRightPoint_;
+
+
+	Vector4d xfrmedEyePoint() { return forwardTransform() * eyePoint_; }
+	Vector4d xfrmedLowerLeftPoint() { return forwardTransform() * lowerLeftPoint_; }
+	Vector4d xfrmedLowerRightPoint() { return forwardTransform() * lowerRightPoint_; }
+	Vector4d xfrmedUpperLeftPoint() { return forwardTransform() * upperLeftPoint_; }
+	Vector4d xfrmedUpperRightPoint() { return forwardTransform() * upperRightPoint_; }
+
 };
