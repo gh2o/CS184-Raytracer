@@ -15,10 +15,10 @@ public:
 class PointLight : public Light {
 public:
 	double calculateDistanceToLight(const Vector4d& source) {
-		return (point_ - source).norm();
+		return (forwardTransform() * point_ - source).norm();
 	}
 	Vector4d calculateDirectionToLight(const Vector4d& source) {
-		return point_ - source;
+		return forwardTransform() * point_ - source;
 	}
 	Color3d colorForDistance(double dist) {
 		return pow(dist, -falloffExponent_) * color_;
@@ -34,7 +34,7 @@ public:
 		return std::numeric_limits<double>::infinity();
 	}
 	Vector4d calculateDirectionToLight(const Vector4d& source) {
-		return -direction_;
+		return forwardTransform() * -direction_;
 	}
 public:
 	Vector4d direction_;
