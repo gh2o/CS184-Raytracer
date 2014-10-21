@@ -219,7 +219,7 @@ void RTIParser::parseFile(std::string filename) {
 			{
 				PointLight* light = new PointLight();
 				light->forwardTransform(transform_);
-				light->point_ = hvec(0);
+				light->point(hvec(0));
 				light->color_ = cvec(3);
 				light->falloffExponent_ = params[6];
 				scene_.addLight(std::unique_ptr<Light>(light));
@@ -229,7 +229,7 @@ void RTIParser::parseFile(std::string filename) {
 			{
 				DirectionalLight* light = new DirectionalLight();
 				light->forwardTransform(transform_);
-				light->direction_ = dvec(0);
+				light->direction(dvec(0));
 				light->color_ = cvec(3);
 				scene_.addLight(std::unique_ptr<Light>(light));
 				break;

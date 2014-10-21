@@ -15,16 +15,30 @@ public:
 class PointLight : public Light {
 public:
 	double calculateDistanceToLight(const Vector4d& source) {
-		return (forwardTransform() * point_ - source).norm();
+		return calculateDifferenceToLight(source).norm();
 	}
 	Vector4d calculateDirectionToLight(const Vector4d& source) {
-		return forwardTransform() * point_ - source;
+		return calculateDifferenceToLight(source);
 	}
 	Color3d colorForDistance(double dist) {
 		return pow(dist, -falloffExponent_) * color_;
 	}
+	void point(const Vector4d& p) { xfDirty_ = true; point_ = p; }
+private:
+	void updateTransformedPoint() {
+		if (xfDirty_) {
+			xfDirty_ = false;
+			xfPoint_ = forwardTransform() * point_;
+		}
+	}
+	Vector4d calculateDifferenceToLight(const Vector4d& source) {
+		updateTransformedPoint();
+		return xfPoint_ - source;
+	}
+private:
+	Vector4d point_, xfPoint_;
+	bool xfDirty_ = true;
 public:
-	Vector4d point_;
 	double falloffExponent_;
 };
 
@@ -34,10 +48,20 @@ public:
 		return std::numeric_limits<double>::infinity();
 	}
 	Vector4d calculateDirectionToLight(const Vector4d& source) {
-		return forwardTransform() * -direction_;
+		updateTransformedDirection();
+		return -xfDirection_;
 	}
-public:
-	Vector4d direction_;
+	void direction(const Vector4d& d) { xfDirty_ = true; direction_ = d; }
+private:
+	void updateTransformedDirection() {
+		if (xfDirty_) {
+			xfDirty_ = false;
+			xfDirection_ = forwardTransform() * direction_;
+		}
+	}
+private:
+	Vector4d direction_, xfDirection_;
+	bool xfDirty_ = true;
 };
 
 class AmbientLight : public Light {
