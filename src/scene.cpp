@@ -8,16 +8,9 @@ void Scene::renderScene(RasterImage& output, ProgressHandler phandler) {
 	for (int r = 0; r < output.rows(); r++) {
 		for (int c = 0; c < output.cols(); c++) {
 			phandler(r * output.cols() + c, output.size());
-			double row = (r + 0.5) / output.rows();
-			double col = (c + 0.5) / output.cols();
-			Vector4d pointOnImagePlane =
-				col * (
-					row *         camera_.xfLowerRightPoint() +
-					(1.0 - row) * camera_.xfUpperRightPoint()) +
-				(1.0 - col) * (
-					row         * camera_.xfLowerLeftPoint() +
-					(1.0 - row) * camera_.xfUpperLeftPoint());
-			Ray viewingRay(camera_.xfEyePoint(), pointOnImagePlane - camera_.xfEyePoint());
+			double rowFrac = (r + 0.5) / output.rows();
+			double colFrac = (c + 0.5) / output.cols();
+			Ray viewingRay = camera_.calculateViewingRay(rowFrac, colFrac);
 			output(r,c) = traceRay(viewingRay, programOptions.bounceDepth_);
 		}
 	}

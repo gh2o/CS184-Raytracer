@@ -68,11 +68,18 @@ public:
 	void lowerRightPoint(const Vector4d& p) { xfDirty_ = true; lowerRightPoint_ = p; }
 	void upperLeftPoint(const Vector4d& p)  { xfDirty_ = true; upperLeftPoint_ = p; }
 	void upperRightPoint(const Vector4d& p) { xfDirty_ = true; upperRightPoint_ = p; }
-	Vector4d xfEyePoint()        { updateTransformedVectors(); return xfEyePoint_; }
-	Vector4d xfLowerLeftPoint()  { updateTransformedVectors(); return xfLowerLeftPoint_; }
-	Vector4d xfLowerRightPoint() { updateTransformedVectors(); return xfLowerRightPoint_; }
-	Vector4d xfUpperLeftPoint()  { updateTransformedVectors(); return xfUpperLeftPoint_; }
-	Vector4d xfUpperRightPoint() { updateTransformedVectors(); return xfUpperRightPoint_; }
+public:
+	Ray calculateViewingRay(double rowFrac, double colFrac) {
+		updateTransformedVectors();
+		Vector4d imagePlanePoint =
+			colFrac * (
+				rowFrac *         xfLowerRightPoint_ +
+				(1.0 - rowFrac) * xfUpperRightPoint_) +
+			(1.0 - colFrac) * (
+				rowFrac         * xfLowerLeftPoint_ +
+				(1.0 - rowFrac) * xfUpperLeftPoint_);
+		return Ray(xfEyePoint_, imagePlanePoint - xfEyePoint_);
+	}
 private:
 	void updateTransformedVectors() {
 		if (xfDirty_) {
