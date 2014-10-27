@@ -108,31 +108,30 @@ Color3d Scene::traceRay(Ray viewingRay, int bounceDepth, bool fromInside) {
 	}
 	// bounce!!!
 	const Vector4d& incomingDirection = viewingRay.direction();
-	const Color3d& reflectiveColor = targetGeometry->material_.reflectiveColor_;
-	const Color3d& translucencyColor = targetGeometry->material_.translucencyColor_;
+	Color3d reflectiveColor = targetGeometry->material_.reflectiveColor_;
+	Color3d translucencyColor = targetGeometry->material_.translucencyColor_;
 
-	if (bounceDepth > 0 && !reflectiveColor.isZero()) {
-		Vector4d outgoingDirection =
-			incomingDirection - 2 * targetNormal.dot(incomingDirection) * targetNormal;
-		Ray outgoingRay(targetIntersection, outgoingDirection);
-		resultColor += traceRay(outgoingRay, bounceDepth - 1, fromInside) * reflectiveColor;
-	}
-
-	if (bounceDepth > 0 && !translucencyColor.isZero()) {
-		double indexOfRefractivity = targetGeometry->material_.indexOfRefractivity_;
-		double n;
-		if (fromInside)
-			n = indexOfRefractivity;
-		else
-			n = 1.0 / indexOfRefractivity;
-		double cosI = targetNormal.dot(incomingDirection);
-		double sinT2 = n * n * (1.0 - cosI * cosI);
-		if (sinT2 > 1.0) {
-			// vector is invalid
-		} else {
-			Vector4d refractedDirection = n * incomingDirection - (n * cosI + sqrt(1.0 - sinT2)) * targetNormal;
-			Ray refractedRay(targetIntersection, refractedDirection);
-			resultColor += traceRay(refractedRay, bounceDepth - 1, !fromInside);
+	if (bounceDepth > 0) {
+		if (!translucencyColor.isZero()) {
+			double n = targetGeometry->material_.indexOfRefractivity_;
+			if (!fromInside)
+				n = 1.0 / n;
+			double cosI = targetNormal.dot(incomingDirection);
+			double sinT2 = n * n * (1.0 - cosI * cosI);
+			if (sinT2 > 1.0) {
+				// total internal reflection
+				reflectiveColor.fill(1.0);
+			} else {
+				Vector4d refractedDirection = n * incomingDirection - (n * cosI + sqrt(1.0 - sinT2)) * targetNormal;
+				Ray refractedRay(targetIntersection, refractedDirection);
+				resultColor += traceRay(refractedRay, bounceDepth - 1, !fromInside);
+			}
+		}
+		if (!reflectiveColor.isZero()) {
+			Vector4d outgoingDirection =
+				incomingDirection - 2 * targetNormal.dot(incomingDirection) * targetNormal;
+			Ray outgoingRay(targetIntersection, outgoingDirection);
+			resultColor += traceRay(outgoingRay, bounceDepth - 1, fromInside) * reflectiveColor;
 		}
 	}
 
