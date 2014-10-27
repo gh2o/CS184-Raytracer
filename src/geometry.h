@@ -25,9 +25,13 @@ public:
 class Mesh : public Geometry {
 public:
 	void addTriangle(const std::array<Vector4d,3>& points);
+	void updateBoundingBox();
 	bool calculateIntNormInObjSpace(Ray inputRay, Vector4d& intersectionPt, Vector4d& normalDirection,
 			bool reverseNormals);
 public:
 	struct Face { std::array<Vector4d,3> points_, normals_; };
 	std::vector<Face> faces_;
+private:
+	Vector4d boundingBoxMin_ = Vector4d::Zero();
+	Vector4d boundingBoxMax_ = Vector4d::Zero();
 };

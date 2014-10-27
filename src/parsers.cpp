@@ -116,6 +116,7 @@ void RTIParser::parseFile(std::string filename) {
 			mesh->material_ = material_;
 			OBJParser objp(*mesh);
 			objp.parseFile(objfname);
+			mesh->updateBoundingBox();
 			scene_.addGeometry(std::unique_ptr<Geometry>(mesh));
 			continue;
 		}

@@ -1,3 +1,4 @@
+#include <unordered_set>
 #include "geometry.h"
 #include "util.h"
 
@@ -108,4 +109,23 @@ void Mesh::addTriangle(const std::array<Vector4d,3>& points) {
 			point += s*ep;
 		faces_.push_back(face);
 	}
+}
+
+void Mesh::updateBoundingBox() {
+	if (faces_.empty()) {
+		boundingBoxMin_ = Vector4d::Zero();
+		boundingBoxMax_ = Vector4d::Zero();
+		return;
+	}
+	const double inf = std::numeric_limits<double>::infinity();
+	boundingBoxMin_.fill(inf);
+	boundingBoxMax_.fill(-inf);
+	for (const Face& face : faces_) {
+		for (const Vector4d& vtx : face.points_) {
+			boundingBoxMin_ = boundingBoxMin_.cwiseMin(vtx);
+			boundingBoxMax_ = boundingBoxMax_.cwiseMax(vtx);
+		}
+	}
+	if (boundingBoxMin_.w() != 1.0 || boundingBoxMax_.w() != 1.0)
+		throw MathException("non-unity-homogeneous bounding box");
 }
