@@ -1,9 +1,9 @@
+#include <cmath>
 #include <atomic>
 #include <thread>
 #include <condition_variable>
 #include "scene.h"
 #include "options.h"
-#include <cmath>
 
 static void dummyProgressHandler(int complete, int total) {}
 
@@ -69,9 +69,8 @@ Color3d Scene::traceRay(Ray viewingRay, int bounceDepth, bool fromInside) {
 	if (programOptions.intersectionOnly_)
 		return Color3d::Constant(1.0 / (targetDistance * targetDistance));
 	// if inside, invert the targetNormal
-	if (fromInside) {
+	if (fromInside)
 		targetNormal = -targetNormal;
-	}
 	// normalize normal
 	targetNormal.normalize();
 	// calulate resulting color
@@ -81,8 +80,8 @@ Color3d Scene::traceRay(Ray viewingRay, int bounceDepth, bool fromInside) {
 		if (dynamic_cast<AmbientLight*>(&light)) {
 			// ambient
 			double ambientIntensity = 1.0;
-			resultColor += light.color_ *
-				targetGeometry->material_.ambientColor_ * ambientIntensity;
+			resultColor += ambientIntensity *
+				light.color_ * targetGeometry->material_.ambientColor_;
 		} else {
 			// check for occlusion
 			Ray rayToLight = light.calculateRayToLight(targetIntersection);
@@ -115,8 +114,6 @@ Color3d Scene::traceRay(Ray viewingRay, int bounceDepth, bool fromInside) {
 	if (bounceDepth > 0 && !reflectiveColor.isZero()) {
 		Vector4d outgoingDirection =
 			incomingDirection - 2 * targetNormal.dot(incomingDirection) * targetNormal;
-
-
 		Ray outgoingRay(targetIntersection, outgoingDirection);
 		resultColor += traceRay(outgoingRay, bounceDepth - 1, fromInside) * reflectiveColor;
 	}
@@ -124,11 +121,10 @@ Color3d Scene::traceRay(Ray viewingRay, int bounceDepth, bool fromInside) {
 	if (bounceDepth > 0 && !translucencyColor.isZero()) {
 		double indexOfRefractivity = targetGeometry->material_.indexOfRefractivity_;
 		double n;
-		if (fromInside) {
+		if (fromInside)
 			n = indexOfRefractivity;
-		} else {
+		else
 			n = 1.0 / indexOfRefractivity;
-		}
 		double cosI = targetNormal.dot(incomingDirection);
 		double sinT2 = n * n * (1.0 - cosI * cosI);
 		if (sinT2 > 1.0) {
@@ -139,8 +135,6 @@ Color3d Scene::traceRay(Ray viewingRay, int bounceDepth, bool fromInside) {
 			resultColor += traceRay(refractedRay, bounceDepth - 1, !fromInside);
 		}
 	}
-
-
 
 	// done!!!
 	return resultColor;
