@@ -134,7 +134,7 @@ Color3d Scene::traceRay(Ray viewingRay, int bounceDepth, bool fromInside) {
 		if (sinT2 > 1.0) {
 			// vector is invalid
 		} else {
-			Vector4d refractedDirection = n * incomingDirection - (n + sqrt(1.0 - sinT2)) * targetNormal;
+			Vector4d refractedDirection = n * incomingDirection - (n * cosI + sqrt(1.0 - sinT2)) * targetNormal;
 			Ray refractedRay(targetIntersection, refractedDirection);
 			resultColor += traceRay(refractedRay, bounceDepth - 1, !fromInside);
 		}
