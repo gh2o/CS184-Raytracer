@@ -10,7 +10,7 @@ std::map<std::string, RTIParser::LineType> RTIParser::initializeLineTypes() {
 		{"ltp", {LINE_TYPE_POINT_LIGHT, 6, 7}},
 		{"ltd", {LINE_TYPE_DIRECTIONAL_LIGHT, 6}},
 		{"lta", {LINE_TYPE_AMBIENT_LIGHT, 3}},
-		{"mat", {LINE_TYPE_MATERIAL, 13}},
+		{"mat", {LINE_TYPE_MATERIAL, 13, 17}},
 		{"xft", {LINE_TYPE_TRANSFORM_TRANSLATE, 3}},
 		{"xfr", {LINE_TYPE_TRANSFORM_ROTATE, 3}},
 		{"xfs", {LINE_TYPE_TRANSFORM_SCALE, 3}},
@@ -129,7 +129,8 @@ void RTIParser::parseFile(std::string filename) {
 		}
 		LineType ltype = iter->second;
 		std::vector<double> params = extractDoubles(ss, lineno);
-		if (params.size() < ltype.pmin_) {
+		double numargs = params.size();
+		if (numargs < ltype.pmin_) {
 			std::ostringstream es;
 			es << stype
 				<< " requires "
@@ -137,7 +138,7 @@ void RTIParser::parseFile(std::string filename) {
 				<< ltype.pmin_
 				<< " parameters";
 			throw ParseException(es.str(), lineno);
-		} else if (params.size() > ltype.pmax_) {
+		} else if (numargs > ltype.pmax_) {
 			ParseException::showWarning("extra parameters found", lineno);
 		}
 		while (params.size() < ltype.pmax_) {
@@ -183,7 +184,9 @@ void RTIParser::parseFile(std::string filename) {
 				material_.diffuseColor_ = cvec(3);
 				material_.specularColor_ = cvec(6);
 				material_.reflectiveColor_ = cvec(10);
+				material_.translucencyColor_ = cvec(13);
 				material_.specularCoefficient_ = params[9];
+				material_.indexOfRefractivity_ = params[16];
 				break;
 			case LINE_TYPE_CAMERA:
 			{

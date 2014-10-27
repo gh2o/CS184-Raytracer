@@ -34,6 +34,8 @@ public:
 	Color3d specularColor_;
 	Color3d reflectiveColor_;
 	double specularCoefficient_;
+	Color3d translucencyColor_;
+	double indexOfRefractivity_;
 };
 
 class Transformable {

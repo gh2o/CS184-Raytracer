@@ -1,5 +1,6 @@
 #include "scene.h"
 #include "options.h"
+#include <cmath>
 
 static void dummyProgressHandler(int complete, int total) {}
 
@@ -26,16 +27,20 @@ void Scene::renderScene(RasterImage& output, ProgressHandler phandler) {
 	}
 }
 
-Color3d Scene::traceRay(Ray viewingRay, int bounceDepth) {
+Color3d Scene::traceRay(Ray viewingRay, int bounceDepth, bool fromInside) {
 	Geometry* targetGeometry;
 	Vector4d targetIntersection, targetNormal;
 	double targetDistance;
 	bool rayIntersected = castRay(viewingRay, &targetDistance, &targetGeometry,
-			&targetIntersection, &targetNormal);
+			&targetIntersection, &targetNormal, fromInside);
 	if (!rayIntersected)
 		return Color3d::Zero();
 	if (programOptions.intersectionOnly_)
 		return Color3d::Constant(1.0 / (targetDistance * targetDistance));
+	// if inside, invert the targetNormal
+	if (fromInside) {
+		targetNormal = -targetNormal;
+	}
 	// normalize normal
 	targetNormal.normalize();
 	// calulate resulting color
@@ -50,10 +55,10 @@ Color3d Scene::traceRay(Ray viewingRay, int bounceDepth) {
 		} else {
 			// check for occlusion
 			Ray rayToLight = light.calculateRayToLight(targetIntersection);
-			bool shouldReverseNormals = targetNormal.dot(rayToLight.direction()) < 0;
+			bool lightReverseNormals = targetNormal.dot(rayToLight.direction()) < 0;
 			double distToLight = light.calculateDistanceToLight(targetIntersection);
 			double distToOccluder;
-			if (castRay(rayToLight, &distToOccluder, nullptr, nullptr, nullptr, shouldReverseNormals)
+			if (castRay(rayToLight, &distToOccluder, nullptr, nullptr, nullptr, lightReverseNormals ^ fromInside)
 					&& distToOccluder <= distToLight)
 				continue;
 			// color
@@ -72,14 +77,40 @@ Color3d Scene::traceRay(Ray viewingRay, int bounceDepth) {
 		}
 	}
 	// bounce!!!
+	const Vector4d& incomingDirection = viewingRay.direction();
 	const Color3d& reflectiveColor = targetGeometry->material_.reflectiveColor_;
+	const Color3d& translucencyColor = targetGeometry->material_.translucencyColor_;
+
 	if (bounceDepth > 0 && !reflectiveColor.isZero()) {
-		const Vector4d& incomingDirection = viewingRay.direction();
 		Vector4d outgoingDirection =
 			incomingDirection - 2 * targetNormal.dot(incomingDirection) * targetNormal;
+
+
 		Ray outgoingRay(targetIntersection, outgoingDirection);
-		resultColor += traceRay(outgoingRay, bounceDepth - 1) * reflectiveColor;
+		resultColor += traceRay(outgoingRay, bounceDepth - 1, fromInside) * reflectiveColor;
 	}
+
+	if (bounceDepth > 0 && !translucencyColor.isZero()) {
+		double indexOfRefractivity = targetGeometry->material_.indexOfRefractivity_;
+		double n;
+		if (fromInside) {
+			n = indexOfRefractivity;
+		} else {
+			n = 1.0 / indexOfRefractivity;
+		}
+		double cosI = targetNormal.dot(incomingDirection);
+		double sinT2 = n * n * (1.0 - cosI * cosI);
+		if (sinT2 > 1.0) {
+			// vector is invalid
+		} else {
+			Vector4d refractedDirection = n * incomingDirection - (n + sqrt(1.0 - sinT2)) * targetNormal;
+			Ray refractedRay(targetIntersection, refractedDirection);
+			resultColor += traceRay(refractedRay, bounceDepth - 1, !fromInside);
+		}
+	}
+
+
+
 	// done!!!
 	return resultColor;
 }

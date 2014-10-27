@@ -12,7 +12,7 @@ public:
 	typedef void (*ProgressHandler)(int complete, int total);
 public:
 	void renderScene(RasterImage& output, ProgressHandler phandler = nullptr);
-	Color3d traceRay(Ray viewingRay, int bounceDepth);
+	Color3d traceRay(Ray viewingRay, int bounceDepth, bool fromInside = false);
 	bool castRay(Ray castedRay, double* targetDistance, Geometry** targetGeometry,
 			Vector4d* targetIntersection, Vector4d* targetNormal, bool reverseNormals = false);
 
