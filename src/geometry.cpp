@@ -2,6 +2,32 @@
 #include "geometry.h"
 #include "util.h"
 
+static bool hitsBoundingBox(Ray ray, const Vector4d& bbmin, const Vector4d& bbmax) {
+	for (int axis = 0; axis < 3; axis++) {
+		for (int bn = 0; bn < 2; bn++) {
+			double axisMag = ray.direction()[axis];
+			if (axisMag == 0.0)
+				continue;
+			double t = ((bn ? bbmax : bbmin)[axis] - ray.origin()[axis]) / axisMag;
+			if (t < 0)
+				continue;
+			Vector4d intersection = ray.origin() + t * ray.direction();
+			for (int axis2 = 0; axis2 < 3; axis2++) {
+				if (axis2 == axis)
+					continue;
+				if (intersection[axis2] < bbmin[axis2])
+					goto missedSide;
+				if (intersection[axis2] > bbmax[axis2])
+					goto missedSide;
+			}
+			return true;
+			missedSide:
+			continue;
+		}
+	}
+	return false;
+}
+
 bool Geometry::calculateIntersectionNormal(Ray inputRay, Vector4d& intersectionPt, Vector4d& normalDirection,
 		bool reverseNormals) {
 	Ray transformedRay(inverseTransform() * inputRay.origin(), inverseTransform() * inputRay.direction());
@@ -42,6 +68,11 @@ bool Sphere::calculateIntNormInObjSpace(Ray inputRay, Vector4d& intersectionPt, 
 
 bool Mesh::calculateIntNormInObjSpace(Ray inputRay, Vector4d& intersectionPt, Vector4d& normalDirection,
 		bool reverseNormals) {
+	// do bounding box
+	if (boundingBoxMin_ != boundingBoxMax_ && faces_.size() > 1)
+		if (!hitsBoundingBox(inputRay, boundingBoxMin_, boundingBoxMax_))
+			return false;
+	// calculate closest face
 	bool closestExists = false;
 	double closestDist = std::numeric_limits<double>::infinity();
 	for (Face& face : faces_) {
