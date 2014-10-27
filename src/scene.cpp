@@ -45,8 +45,8 @@ Color3d Scene::traceRay(Ray viewingRay, int bounceDepth) {
 		if (dynamic_cast<AmbientLight*>(&light)) {
 			// ambient
 			double ambientIntensity = 1.0;
-			resultColor += ambientIntensity * light.color_ *
-				targetGeometry->material_.ambientColor_;
+			resultColor += light.color_ *
+				targetGeometry->material_.ambientColor_ * ambientIntensity;
 		} else {
 			// check for occlusion
 			Ray rayToLight = light.calculateRayToLight(targetIntersection);
