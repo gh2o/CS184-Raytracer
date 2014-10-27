@@ -9,6 +9,7 @@ public:
 public:
 	std::vector<std::string> inputFilenames_;
 	std::string outputFilename_;
+	int renderThreadsCount_ = 1;
 	int renderWidth_ = 500;
 	int renderHeight_ = 500;
 	int bounceDepth_ = 10;
@@ -18,6 +19,7 @@ public:
 	enum {
 		OPTION_HELP,
 		OPTION_OUTPUT = 'o',
+		OPTION_THREADS = 't',
 		OPTION_WIDTH = 'w',
 		OPTION_HEIGHT = 'h',
 		OPTION_BOUNCE_DEPTH,

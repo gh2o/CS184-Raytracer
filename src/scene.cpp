@@ -1,3 +1,6 @@
+#include <atomic>
+#include <thread>
+#include <condition_variable>
 #include "scene.h"
 #include "options.h"
 #include <cmath>
@@ -6,16 +9,44 @@ static void dummyProgressHandler(int complete, int total) {}
 
 void Scene::renderScene(RasterImage& output, ProgressHandler phandler) {
 	phandler || (phandler = dummyProgressHandler);
-	for (int r = 0; r < output.rows(); r++) {
-		for (int c = 0; c < output.cols(); c++) {
-			phandler(r * output.cols() + c, output.size());
-			double rowFrac = (r + 0.5) / output.rows();
-			double colFrac = (c + 0.5) / output.cols();
-			Ray viewingRay = camera_.calculateViewingRay(rowFrac, colFrac);
-			output(r,c) = traceRay(viewingRay, programOptions.bounceDepth_);
+
+	int blockSize = 2000;
+	std::atomic_int unprocessedStart(0);
+	std::atomic_int completedPixels(0);
+	int totalPixels = output.size();
+
+	auto renderThread = [&,blockSize](){
+		int startPixel, endPixel;
+		while (true) {
+			endPixel = (unprocessedStart += blockSize);
+			startPixel = endPixel - blockSize;
+			if (startPixel >= totalPixels)
+				break;
+			for (int i = startPixel; i < endPixel; i++) {
+				int r = i / output.cols();
+				int c = i % output.cols();
+				double rowFrac = (r + 0.5) / output.rows();
+				double colFrac = (c + 0.5) / output.cols();
+				Ray viewingRay = camera_.calculateViewingRay(rowFrac, colFrac);
+				output(r,c) = traceRay(viewingRay, programOptions.bounceDepth_);
+				completedPixels++;
+			}
 		}
+	};
+
+	{
+		std::vector<std::thread> renderThreads;
+		for (int i = 0; i < programOptions.renderThreadsCount_; i++)
+			renderThreads.push_back(std::thread(renderThread));
+		while (completedPixels < totalPixels) {
+			phandler(completedPixels, output.size());
+			std::this_thread::sleep_for(std::chrono::milliseconds(100));
+		}
+		for (std::thread& t : renderThreads)
+			t.join();
+		phandler(output.size(), output.size());
 	}
-	phandler(output.size(), output.size());
+
 	if (programOptions.intersectionOnly_) {
 		double maxBrightness = std::numeric_limits<double>::min();
 		for (int r = 0; r < output.rows(); r++)

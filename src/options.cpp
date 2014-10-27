@@ -7,6 +7,7 @@ Options programOptions;
 const struct option Options::getoptOptions[] = {
 	{"help", 0, NULL, OPTION_HELP},
 	{"output", 1, NULL, OPTION_OUTPUT},
+	{"threads", 1, NULL, OPTION_THREADS},
 	{"width", 1, NULL, OPTION_WIDTH},
 	{"height", 1, NULL, OPTION_HEIGHT},
 	{"bdepth", 1, NULL, OPTION_BOUNCE_DEPTH},
@@ -16,13 +17,25 @@ const struct option Options::getoptOptions[] = {
 
 bool Options::parseCommandLine(int argc, char *argv[]) {
 	int opt;
-	while ((opt = getopt_long(argc, argv, "w:h:o:", Options::getoptOptions, NULL)) != -1) {
+	while ((opt = getopt_long(argc, argv, "t:w:h:o:", Options::getoptOptions, NULL)) != -1) {
 		switch (opt) {
 			case OPTION_OUTPUT:
 				outputFilename_ = optarg;
 				break;
 			case OPTION_INTERSECTION_ONLY:
 				intersectionOnly_ = true;
+				break;
+			case OPTION_THREADS:
+				try {
+					renderThreadsCount_ = std::stoi(optarg);
+				} catch (std::logic_error& e) {
+					std::cerr << "Error: Thread count is invalid." << std::endl;
+					return false;
+				}
+				if (renderThreadsCount_ <= 0) {
+					std::cerr << "Error: Thread count must be positive." << std::endl;
+					return false;
+				}
 				break;
 			case OPTION_WIDTH:
 			case OPTION_HEIGHT:

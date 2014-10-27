@@ -1,6 +1,6 @@
 CXX := clang++
 LIBS := build/libpng/.libs/libpng16.a
-CXXFLAGS := -std=c++11 -O2 -g -Wall -Ibuild/libpng -Ieigen -Ilibpng
+CXXFLAGS := -std=c++11 -O2 -g -Wall -pthread -Ibuild/libpng -Ieigen -Ilibpng
 LDFLAGS := -lz
 
 SRCS := $(wildcard src/*.cpp)
