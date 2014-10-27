@@ -162,16 +162,16 @@ void RTIParser::parseFile(std::string filename) {
 				transform_.setIdentity();
 				break;
 			case LINE_TYPE_TRANSFORM_TRANSLATE:
-				transform_.pretranslate(tvec(0));
+				transform_.translate(tvec(0));
 				break;
 			case LINE_TYPE_TRANSFORM_SCALE:
-				transform_.prescale(tvec(0));
+				transform_.scale(tvec(0));
 				break;
 			case LINE_TYPE_TRANSFORM_ROTATE:
 			{
 				Vector3d rvec = tvec(0);
 				if (!rvec.isZero())
-					transform_.prerotate(AngleAxis<double>(
+					transform_.rotate(AngleAxis<double>(
 						rvec.norm() * (2 * M_PI / 360.0),
 						rvec.normalized()
 					));
