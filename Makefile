@@ -19,7 +19,7 @@ as2: $(LIBS) $(OBJS)
 build/%.o: src/%.cpp build/%.d
 	$(CXX) $< $(CXXFLAGS) -c -o $@
 
-build/%.d: src/%.cpp Makefile
+build/%.d: src/%.cpp Makefile $(LIBS)
 	@mkdir -p build
 	@$(CXX) $< $(CXXFLAGS) -MM -MP -MT $@ -MF $@
 
