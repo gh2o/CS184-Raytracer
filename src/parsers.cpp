@@ -333,8 +333,10 @@ void OBJParser::parseFile(std::string filename) {
 				Vector4d firstVec = *firstPoint.vertexPtr_ - *basePoint.vertexPtr_;
 				Vector4d secondVec = *secondPoint.vertexPtr_ - *basePoint.vertexPtr_;
 				Vector4d calculatedNormal = Util::cross(firstVec, secondVec);
-				if (calculatedNormal.isZero())
-					throw ParseException("degenerate face", lineno);
+				if (calculatedNormal.isZero()) {
+					ParseException::showWarning("degenerate face", lineno);
+					continue;
+				}
 				calculatedNormal.normalize();
 				// add face to mesh
 				Mesh::Face triFace;
