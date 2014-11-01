@@ -1,0 +1,15 @@
+COMMAND LINE INPUT
+------------------
+./as2 inputs/input-08.rti -o image-08.png -h 1000 -w 1000 -t 8
+
+
+RUNTIME
+-------
+0.371s (with multithreading)
+
+
+FEATURES
+--------
+- demonstrates translation with 4 differently-colored spheres
+- 4 point lights
+- 1 directional light
