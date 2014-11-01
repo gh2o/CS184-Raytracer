@@ -3,3 +3,4 @@
 /build
 /as2
 autom4te.cache
+.DS_Store
