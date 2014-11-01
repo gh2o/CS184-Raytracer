@@ -1,0 +1,20 @@
+Assignment 2
+Gavin Li and Linda He
+
+Platforms: Linux and Mac
+
+Required Features:
+- transformations for both geometry and lights+camera
+- spheres and triangles and .obj
+- basic phong shading
+- lighting and shadows
+- outputs as png
+  - set image size with -w and -h options
+  - set output file name with -o option
+- .rti file(s) are positional command line arguments
+
+Extra Features:
+- bounding box test for .obj files
+- transparency + refraction
+  - extra optional params for mat: <refrR> <refrG> <refrB> <refrIndex>
+- extra robust against errors in .rti files
