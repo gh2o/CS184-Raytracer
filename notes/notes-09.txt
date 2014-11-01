@@ -1,0 +1,15 @@
+COMMAND LINE INPUT
+------------------
+./as2 inputs/input-09.rti -o image-09.png -h 2000 -w 2000 -t 16
+
+
+RUNTIME
+-------
+0.697s (with multithreading)
+
+
+FEATURES
+--------
+- transformation of camera
+- refraction + total internal reflection
+- correct normals on ellipsoids
