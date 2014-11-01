@@ -1,0 +1,18 @@
+COMMAND LINE INPUT
+------------------
+./as2 inputs/input-02.rti -o image-02.png -h 1000 -w 1000 -t 8
+
+
+RUNTIME
+-------
+1m14.061s (with multithreading)
+
+
+FEATURES
+--------
+- 1 teapot obj file
+- 3 spheres
+- 2 triangles for "base"
+- 4 point lights
+- 1 directional light
+- need to run it with multithreading to get a reasonable time

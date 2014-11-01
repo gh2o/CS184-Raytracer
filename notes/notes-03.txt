@@ -1,0 +1,15 @@
+COMMAND LINE INPUT
+------------------
+./as2 inputs/input-03.rti -o image-03.png -h 1000 -w 1000 -t 8
+
+
+RUNTIME
+-------
+3m21.573s (with multithreading)
+
+
+FEATURES
+--------
+- 1 human figure obj file
+- 3 point lights
+- 3 directional lights

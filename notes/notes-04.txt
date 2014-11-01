@@ -1,0 +1,15 @@
+COMMAND LINE INPUT
+------------------
+./as2 inputs/input-04.rti -o image-04.png -h 1000 -w 1000 -t 8
+
+
+RUNTIME
+-------
+1m2.856s (with multithreading)
+
+
+FEATURES
+--------
+- 1 ridiculously cute android obj file
+- 4 point lights
+- 3 directional lights

@@ -1,0 +1,20 @@
+COMMAND LINE INPUT
+------------------
+./as2 inputs/input-07.rti -o image-07.png -h 1000 -w 1000 -t 8
+
+
+RUNTIME
+-------
+2.687s (with multi-threading)
+
+
+FEATURES
+--------
+- 3 spheres, translated upwards from location
+  of first
+- checkerboard at bottom is made of two triangles,
+  translated across the screen in a checkerboard
+  pattern
+- background is also two large triangles
+- 2 point lights
+- running it without multithreading took 11.592s

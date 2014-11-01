@@ -1,0 +1,17 @@
+COMMAND LINE INPUT
+------------------
+./as2 inputs/input-06.rti -o image-06.png -h 1000 -w 1000 -t 8
+
+
+RUNTIME
+-------
+4.671s (with multithreading)
+
+
+FEATURES
+--------
+- 9 spheres, 1 with glass-like properties,
+  transformed into new positions
+- 2 point lights
+- 1 directional light
+- 1 triangle

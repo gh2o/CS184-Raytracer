@@ -1,0 +1,16 @@
+COMMAND LINE INPUT
+------------------
+./as2 inputs/input-05.rti -o image-05.png -h 1000 -w 1000 -t 8
+
+
+RUNTIME
+-------
+0.933s (with multithreading)
+
+
+FEATURES
+--------
+- 1 human figure obj file
+- 2 point lights
+- 6 spheres, 1 with glass-like material
+- 2 triangles - 1 in image, 1 as "floor"
