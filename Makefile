@@ -1,7 +1,13 @@
 CXX := clang++
 LIBS := build/libpng/.libs/libpng16.a
-CXXFLAGS := -std=c++11 -O2 -g -Wall -pthread -Ibuild/libpng -Ieigen -Ilibpng
+CXXFLAGS := -std=c++11 -O2 -g -Wall -pthread \
+	-Ibuild/libpng -Ieigen -Ilibpng
 LDFLAGS := -lz
+
+ifeq ($(shell which $(CXX) >/dev/null 2>&1 && echo 1),)
+CXX := toolchain/bin/$(CXX)
+CXXFLAGS += -isystem fixinc
+endif
 
 SRCS := $(wildcard src/*.cpp)
 OBJS := $(patsubst src/%.cpp,build/%.o,$(SRCS))
@@ -13,7 +19,7 @@ as2: $(LIBS) $(OBJS)
 build/%.o: src/%.cpp build/%.d
 	$(CXX) $< $(CXXFLAGS) -c -o $@
 
-build/%.d: src/%.cpp Makefile
+build/%.d: src/%.cpp Makefile $(LIBS)
 	@mkdir -p build
 	@$(CXX) $< $(CXXFLAGS) -MM -MP -MT $@ -MF $@
 
